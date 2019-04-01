@@ -22,7 +22,7 @@ func YamlOutput(release *provider.Release) {
 	_ = yaml.NewEncoder(os.Stdout).Encode(mapRelease(release))
 }
 
-func ConsoleOutput(release *provider.Release) {
+func ConsoleOutput(release *provider.Release, colorize bool) {
 	r := mapRelease(release)
 
 	fmt.Printf("Current release version\t: %s\n", r.CurrentVersion)
@@ -87,6 +87,17 @@ func ConsoleOutput(release *provider.Release) {
 		ri := r.Changelog[i]
 		var buffer bytes.Buffer
 
+		if colorize {
+			switch ri.Level {
+			case "MAJOR":
+				buffer.WriteString("[red]")
+			case "MINOR":
+				buffer.WriteString("[blue]")
+			case "PATCH":
+				buffer.WriteString("[yellow]")
+			}
+		}
+
 		buffer.WriteString(" ")
 		buffer.WriteString(pad.Right(ri.Kind, cols[0], " "))
 		buffer.WriteString(" | ")
@@ -96,16 +107,7 @@ func ConsoleOutput(release *provider.Release) {
 		buffer.WriteString(" | ")
 		buffer.WriteString(pad.Right(ri.Title, cols[3], " "))
 
-		switch ri.Level {
-		case "MAJOR":
-			fmt.Println(colorstring.Color("[red]" + buffer.String()))
-		case "MINOR":
-			fmt.Println(colorstring.Color("[blue]" + buffer.String()))
-		case "PATCH":
-			fmt.Println(colorstring.Color("[yellow]" + buffer.String()))
-		default:
-			fmt.Println(buffer.String())
-		}
+		fmt.Println(colorstring.Color(buffer.String()))
 	}
 }
 

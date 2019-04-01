@@ -9,6 +9,7 @@ import (
 var (
 	token   = kingpin.Flag("github-token", "Github token").Envar("GITHUB_TOKEN").Required().String()
 	owner   = kingpin.Flag("github-owner", "Github owner").Required().String()
+	color   = kingpin.Flag("color", "Colorize output").Default("true").Bool()
 	repo    = kingpin.Flag("github-repo", "Github repo").Required().String()
 	pattern = kingpin.Flag("pattern", "Versionning pattern").Short('p').Default("vSEMVER").String()
 	output  = kingpin.Flag("output", "Output format (console, json, yaml)").Short('o').Default("console").String()
@@ -23,7 +24,7 @@ func main() {
 
 	switch *output {
 	case "console":
-		formatter.ConsoleOutput(&r)
+		formatter.ConsoleOutput(&r, *color)
 	case "json":
 		formatter.JsonOutput(&r)
 	case "yaml":
