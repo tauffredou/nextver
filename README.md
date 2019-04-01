@@ -50,7 +50,7 @@ Commit log:
 
 ### Using date release
 ```
-github-release --github-owner=tauffredou --github-repo=test-semver --pattern=myprefix-DATE
+nextver --github-owner=tauffredou --github-repo=test-semver --pattern=myprefix-DATE
 ```
 This will output
 ```

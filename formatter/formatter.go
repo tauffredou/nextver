@@ -1,9 +1,12 @@
 package formatter
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/jobteaser/github-release/provider"
+	"github.com/mitchellh/colorstring"
+	"github.com/willf/pad"
 	"gopkg.in/yaml.v2"
 	"os"
 )
@@ -29,12 +32,79 @@ func ConsoleOutput(release *provider.Release) {
 
 	if len(r.Changelog) == 0 {
 		fmt.Println("No change since last release")
-	} else {
-		fmt.Printf("% 8s    %5s    %s\n", "Kind", "Level", "Message")
-		fmt.Println("---------|---------|------------------------------")
-		for i := range r.Changelog {
-			ri := r.Changelog[i]
-			fmt.Printf("% 8s |  %5s  | %s\n", ri.Kind, ri.Level, ri.Title)
+		return
+	}
+
+	var cols = []int{
+		len("Kind"),
+		len("Level"),
+		len("Scope"),
+		len("Title"),
+	}
+	for i := range r.Changelog {
+		row := []string{
+			r.Changelog[i].Kind,
+			r.Changelog[i].Level,
+			r.Changelog[i].Scope,
+			r.Changelog[i].Title,
+		}
+
+		for j := 0; j < 4; j++ {
+			l := len(row[j])
+			if l > cols[j] {
+				cols[j] = l
+			}
+		}
+	}
+
+	var buffer bytes.Buffer
+
+	buffer.WriteString(" ")
+	buffer.WriteString(pad.Right("kind", cols[0], " "))
+	buffer.WriteString(" | ")
+	buffer.WriteString(pad.Right("Level", cols[1], " "))
+	buffer.WriteString(" | ")
+	buffer.WriteString(pad.Right("Scope", cols[2], " "))
+	buffer.WriteString(" | ")
+	buffer.WriteString(pad.Right("Message", cols[3], " "))
+
+	fmt.Println(buffer.String())
+
+	buffer = bytes.Buffer{}
+
+	buffer.WriteString(" ")
+	buffer.WriteString(pad.Right("", cols[0], "-"))
+	buffer.WriteString(" | ")
+	buffer.WriteString(pad.Right("", cols[1], "-"))
+	buffer.WriteString(" | ")
+	buffer.WriteString(pad.Right("", cols[2], "-"))
+	buffer.WriteString(" | ")
+	buffer.WriteString(pad.Right("", cols[3], "-"))
+
+	fmt.Println(buffer.String())
+
+	for i := range r.Changelog {
+		ri := r.Changelog[i]
+		var buffer bytes.Buffer
+
+		buffer.WriteString(" ")
+		buffer.WriteString(pad.Right(ri.Kind, cols[0], " "))
+		buffer.WriteString(" | ")
+		buffer.WriteString(pad.Right(ri.Level, cols[1], " "))
+		buffer.WriteString(" | ")
+		buffer.WriteString(pad.Right(ri.Scope, cols[2], " "))
+		buffer.WriteString(" | ")
+		buffer.WriteString(pad.Right(ri.Title, cols[3], " "))
+
+		switch ri.Level {
+		case "MAJOR":
+			fmt.Println(colorstring.Color("[red]" + buffer.String()))
+		case "MINOR":
+			fmt.Println(colorstring.Color("[blue]" + buffer.String()))
+		case "PATCH":
+			fmt.Println(colorstring.Color("[yellow]" + buffer.String()))
+		default:
+			fmt.Println(buffer.String())
 		}
 	}
 }
