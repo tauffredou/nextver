@@ -28,7 +28,7 @@ func ConsoleOutput(release *provider.Release, colorize bool) {
 	fmt.Printf("Current release version\t: %s\n", r.CurrentVersion)
 	fmt.Printf("Next release version\t: %s\n", r.NextVersion)
 
-	fmt.Println("\nCommit log:")
+	fmt.Println("\nChangelog:")
 
 	if len(r.Changelog) == 0 {
 		fmt.Println("No change since last release")
