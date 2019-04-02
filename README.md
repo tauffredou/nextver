@@ -13,7 +13,7 @@ go build
 ## Usage
 
 ```
-usage: github-release --github-token=GITHUB-TOKEN --github-owner=GITHUB-OWNER --github-repo=GITHUB-REPO [<flags>]
+usage: nextver --github-token=GITHUB-TOKEN --github-owner=GITHUB-OWNER --github-repo=GITHUB-REPO [<flags>]
 
 Flags:
       --help                     Show context-sensitive help (also try --help-long and --help-man).
@@ -36,9 +36,24 @@ Flags:
 export GITHUB_TOKEN=xxxxxxxxx
 ```
 
-### Default options
+### Release pattern
+
+The following keyworks are supported
+- `SEMVER`: use semantic versionning (ex 1.0.5)
+- `DATE`: use timestamping for rolling versionning. The opiniated format is YYYY-MM-DD-HHmmss
+
+Those keywords can be used in any pattern. Some examples:
 ```
-github-release --github-owner=tauffredou --github-repo=test-semver
+SEMVER        -> 1.0.5
+vSEMVER       -> v1.0.5
+rDATE         -> r2019-04-01-133742
+DATE          -> 2019-04-01-133742
+release-DATE  -> release-2019-04-01-133742
+``` 
+
+#### Default options
+```
+nextver --github-owner=tauffredou --github-repo=test-semver
 ```
 
 Will output 
@@ -51,7 +66,7 @@ Commit log:
 ---------|---------|------------------------------
 ```
 
-### Using date release
+#### Using date release
 ```
 nextver --github-owner=tauffredou --github-repo=test-semver --pattern=myprefix-DATE
 ```
