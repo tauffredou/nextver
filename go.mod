@@ -1,4 +1,4 @@
-module github.com/jobteaser/github-release
+module github.com/tauffredou/nextver
 
 go 1.12
 

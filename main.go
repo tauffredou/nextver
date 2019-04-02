@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/jobteaser/github-release/formatter"
-	"github.com/jobteaser/github-release/provider"
+	"github.com/tauffredou/nextver/formatter"
+	"github.com/tauffredou/nextver/provider"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
