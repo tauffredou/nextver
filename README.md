@@ -21,9 +21,12 @@ Flags:
                                  Github token
       --github-owner=GITHUB-OWNER  
                                  Github owner
+      --color                    Colorize output
       --github-repo=GITHUB-REPO  Github repo
   -p, --pattern="vSEMVER"        Versionning pattern
   -o, --output="console"         Output format (console, json, yaml)
+  -b, --branch=BRANCH            Target branch (default branch if empty)
+
 
 ```
 

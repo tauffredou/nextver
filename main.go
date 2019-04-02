@@ -13,13 +13,14 @@ var (
 	repo    = kingpin.Flag("github-repo", "Github repo").Required().String()
 	pattern = kingpin.Flag("pattern", "Versionning pattern").Short('p').Default("vSEMVER").String()
 	output  = kingpin.Flag("output", "Output format (console, json, yaml)").Short('o').Default("console").String()
+	branch  = kingpin.Flag("branch", "Target branch (default branch if empty)").Short('b').String()
 )
 
 func main() {
 
 	kingpin.Parse()
 
-	p := provider.NewGithubProvider(*owner, *repo, *token, *pattern)
+	p := provider.NewGithubProvider(*owner, *repo, *token, *pattern, *branch)
 	r := p.GetLatestRelease()
 
 	switch *output {

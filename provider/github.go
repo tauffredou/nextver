@@ -3,9 +3,9 @@ package provider
 import (
 	"fmt"
 	"github.com/shurcooL/githubv4"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -15,33 +15,10 @@ type GithubProvider struct {
 	Repo    string
 	client  *githubv4.Client
 	Pattern string
+	Branch  string
 }
 
-type tagEdge struct {
-	Node struct {
-		Target struct {
-			Tag struct {
-				Message string
-				Target  struct {
-					Commit struct {
-						Oid string
-					} `graphql:"... on Commit"`
-				}
-			} `graphql:"... on Tag"`
-		}
-	}
-}
-
-type CommitNode struct {
-	Oid     string
-	Message string
-}
-
-type PageInfo struct {
-	HasNextPage bool
-}
-
-func NewGithubProvider(owner string, repo string, token string, pattern string) *GithubProvider {
+func NewGithubProvider(owner string, repo string, token string, pattern string, branch string) *GithubProvider {
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
@@ -52,6 +29,7 @@ func NewGithubProvider(owner string, repo string, token string, pattern string) 
 		Repo:    repo,
 		client:  githubv4.NewClient(httpClient),
 		Pattern: pattern,
+		Branch:  branch,
 	}
 }
 
@@ -72,7 +50,7 @@ func (p *GithubProvider) GetLatestRelease() Release {
 
 	err := p.client.Query(context.Background(), &query, variables)
 	if err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal("cannot get last tags")
 	}
 
 	tags := query.Repository.Refs.Edges
@@ -106,37 +84,58 @@ func (p *GithubProvider) GetLatestRelease() Release {
 
 }
 
-func (p *GithubProvider) getHistory(ref string) []ReleaseItem {
-	var query struct {
-		Repository struct {
-			DefaultBranchRef struct {
-				Target struct {
-					Commit struct {
-						History struct {
-							PageInfo PageInfo
-							Nodes    []CommitNode
-						} `graphql:"history(first: 50)"`
-					} `graphql:"... on Commit"`
-				}
-			}
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
+func (p *GithubProvider) getHistory(fromRef string) []ReleaseItem {
 
 	variables := map[string]interface{}{
 		"owner": githubv4.String(p.Owner),
 		"name":  githubv4.String(p.Repo),
 	}
 
+	if p.Branch != "" {
+		variables["branch"] = githubv4.String(p.Branch)
+	} else {
+		// Get default branch
+		var query struct {
+			Repository struct {
+				DefaultBranchRef struct {
+					Name string
+				}
+			} `graphql:"repository(owner: $owner, name: $name)"`
+		}
+
+		err := p.client.Query(context.Background(), &query, variables)
+		if err != nil {
+			log.Fatal(err)
+		}
+		variables["branch"] = githubv4.String(query.Repository.DefaultBranchRef.Name)
+	}
+
+	variables["itemsCount"] = githubv4.Int(50)
+	var query struct {
+		Repository struct {
+			Ref struct {
+				Target struct {
+					Commit struct {
+						History struct {
+							PageInfo PageInfo
+							Nodes    []CommitNode
+						} `graphql:"history(first: $itemsCount)"`
+					} `graphql:"... on Commit"`
+				}
+			} `graphql:"ref(qualifiedName: $branch)"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
 	err := p.client.Query(context.Background(), &query, variables)
 	if err != nil {
 		log.Fatal(err)
 	}
-	nodes := query.Repository.DefaultBranchRef.Target.Commit.History.Nodes
+	nodes := query.Repository.Ref.Target.Commit.History.Nodes
 
 	result := make([]ReleaseItem, 0)
 
 	for i := range nodes {
-		if nodes[i].Oid == ref {
+		if nodes[i].Oid == fromRef {
 			break
 		}
 		ri := NewReleaseItem(nodes[i].Message)
