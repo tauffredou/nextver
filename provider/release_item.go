@@ -3,14 +3,18 @@ package provider
 import (
 	"regexp"
 	"strings"
+	"time"
 )
 
 type ReleaseItem struct {
+	ID     string
 	Kind   string
 	Scope  string
 	Title  string
 	Detail string
 	Level  byte
+	Author string
+	Date   time.Time
 }
 
 func (ri *ReleaseItem) LevelName() string {
@@ -25,9 +29,12 @@ func (ri *ReleaseItem) LevelName() string {
 	return ""
 }
 
-func NewReleaseItem(message string) ReleaseItem {
+func NewReleaseItem(author string, date time.Time, message string) ReleaseItem {
 
-	ri := ReleaseItem{}
+	ri := ReleaseItem{
+		Author: author,
+		Date:   date,
+	}
 
 	// Read first line
 	index := strings.Index(message, "\n")

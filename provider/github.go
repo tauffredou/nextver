@@ -135,10 +135,11 @@ func (p *GithubProvider) getHistory(fromRef string) []ReleaseItem {
 	result := make([]ReleaseItem, 0)
 
 	for i := range nodes {
-		if nodes[i].Oid == fromRef {
+		n := nodes[i]
+		if n.Oid == fromRef {
 			break
 		}
-		ri := NewReleaseItem(nodes[i].Message)
+		ri := NewReleaseItem(n.Author.Name, n.Author.Date, n.Message)
 		result = append(result, ri)
 	}
 

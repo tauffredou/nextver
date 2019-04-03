@@ -2,11 +2,25 @@ package provider
 
 import (
 	"github.com/magiconair/properties/assert"
+	"log"
 	"testing"
+	"time"
 )
 
+var (
+	testDate = MustParse(time.RFC3339, "2010-01-02T12:34:00Z")
+)
+
+func MustParse(layout, value string) time.Time {
+	t, err := time.Parse(layout, value)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return t
+}
+
 func TestNewReleaseItem_withScope(t *testing.T) {
-	ri := NewReleaseItem("feat(scope): pouet")
+	ri := NewReleaseItem("tauf", testDate, "feat(scope): pouet")
 
 	expected := ReleaseItem{
 		Kind:   "feat",
@@ -14,13 +28,15 @@ func TestNewReleaseItem_withScope(t *testing.T) {
 		Detail: "",
 		Title:  "pouet",
 		Level:  MINOR,
+		Author: "tauf",
+		Date:   testDate,
 	}
 
 	assert.Equal(t, ri, expected)
 }
 
 func TestNewReleaseItem_withSpecialChars(t *testing.T) {
-	ri := NewReleaseItem("some-kind(scope): pouet")
+	ri := NewReleaseItem("tauf", testDate, "some-kind(scope): pouet")
 
 	expected := ReleaseItem{
 		Kind:   "some-kind",
@@ -28,13 +44,15 @@ func TestNewReleaseItem_withSpecialChars(t *testing.T) {
 		Detail: "",
 		Title:  "pouet",
 		Level:  UNDEFINED,
+		Author: "tauf",
+		Date:   testDate,
 	}
 
 	assert.Equal(t, ri, expected)
 }
 
 func TestNewReleaseItem_withoutScope(t *testing.T) {
-	ri := NewReleaseItem("feat: pouet")
+	ri := NewReleaseItem("tauf", testDate, "feat: pouet")
 
 	expected := ReleaseItem{
 		Kind:   "feat",
@@ -42,6 +60,8 @@ func TestNewReleaseItem_withoutScope(t *testing.T) {
 		Detail: "",
 		Title:  "pouet",
 		Level:  MINOR,
+		Author: "tauf",
+		Date:   testDate,
 	}
 
 	assert.Equal(t, ri, expected)
@@ -52,7 +72,7 @@ func TestNewReleaseItem_withText(t *testing.T) {
 
 This do that
 `
-	ri := NewReleaseItem(message)
+	ri := NewReleaseItem("tauf", testDate, message)
 
 	expected := ReleaseItem{
 		Kind:   "feat",
@@ -60,6 +80,8 @@ This do that
 		Detail: "This do that",
 		Level:  MINOR,
 		Scope:  "feature-1234",
+		Date:   testDate,
+		Author: "tauf",
 	}
 	assert.Equal(t, ri, expected)
 

@@ -1,8 +1,11 @@
 package provider
 
+import "time"
+
 type CommitNode struct {
 	Oid     string
 	Message string
+	Author  Author
 }
 
 type PageInfo struct {
@@ -22,4 +25,10 @@ type tagEdge struct {
 			} `graphql:"... on Tag"`
 		}
 	}
+}
+
+type Author struct {
+	Name  string
+	Email string
+	Date  time.Time
 }

@@ -7,9 +7,9 @@ import (
 
 var (
 	changeLog = []ReleaseItem{
-		NewReleaseItem("feat(feature-1234): commit message"),
-		NewReleaseItem("fix(feature-1234): commit message"),
-		NewReleaseItem("empty"),
+		NewReleaseItem("tauf", testDate, "feat(feature-1234): commit message"),
+		NewReleaseItem("tauf", testDate, "fix(feature-1234): commit message"),
+		NewReleaseItem("tauf", testDate, "empty"),
 	}
 )
 
