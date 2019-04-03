@@ -9,6 +9,6 @@ build:
 	go build
 
 docker:
-	docker built -t tauffredou/nextver .
+	docker build -t tauffredou/nextver .
 
 .DEFAULT_GOAL: all
