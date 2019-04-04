@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/colorstring"
 	"github.com/tauffredou/nextver/provider"
-	"github.com/willf/pad"
+	pad "github.com/willf/pad/utf8"
 	"gopkg.in/yaml.v2"
 	"os"
 	"time"
