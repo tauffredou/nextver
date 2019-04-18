@@ -11,25 +11,33 @@ import (
 )
 
 type GithubProvider struct {
-	Owner   string
-	Repo    string
-	client  *githubv4.Client
-	Pattern string
-	Branch  string
+	Owner         string
+	Repo          string
+	client        *githubv4.Client
+	Branch        string
+	Pattern       string
+	VersionRegexp *regexp.Regexp
 }
 
 func NewGithubProvider(owner string, repo string, token string, pattern string, branch string) *GithubProvider {
+	log.WithField("token", token).Debug("Init github provider")
+
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
 	httpClient := oauth2.NewClient(context.Background(), src)
 
+	replacer := strings.NewReplacer(
+		"SEMVER", SemverRegex,
+		"DATE", DateRegexp,
+	)
 	return &GithubProvider{
-		Owner:   owner,
-		Repo:    repo,
-		client:  githubv4.NewClient(httpClient),
-		Pattern: pattern,
-		Branch:  branch,
+		Owner:         owner,
+		Repo:          repo,
+		client:        githubv4.NewClient(httpClient),
+		Branch:        branch,
+		Pattern:       pattern,
+		VersionRegexp: regexp.MustCompile(replacer.Replace(pattern)),
 	}
 }
 
@@ -54,15 +62,10 @@ func (p *GithubProvider) GetLatestRelease() Release {
 	}
 
 	tags := query.Repository.Refs.Edges
-	replacer := strings.NewReplacer(
-		"SEMVER", SemverRegex,
-		"DATE", DateRegexp,
-	)
 
-	re := regexp.MustCompile(replacer.Replace(p.Pattern))
 	// reverse order
 	for i := len(tags) - 1; i >= 0; i-- {
-		if re.MatchString(tags[i].Node.Target.Tag.Message) {
+		if p.VersionRegexp.MatchString(tags[i].Node.Target.Tag.Message) {
 			ref := tags[i].Node.Target.Tag.Target.Commit.Oid
 			return Release{
 				Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
@@ -145,4 +148,54 @@ func (p *GithubProvider) getHistory(fromRef string) []ReleaseItem {
 
 	return result
 
+}
+
+func (p *GithubProvider) GetReleases() []Release {
+	log.Debug("Getting release")
+	var query struct {
+		Repository struct {
+			Refs struct {
+				Edges []tagEdge
+			} `graphql:"refs(refPrefix: \"refs/tags/\", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC})"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	variables := map[string]interface{}{
+		"owner": githubv4.String(p.Owner),
+		"name":  githubv4.String(p.Repo),
+	}
+
+	err := p.client.Query(context.Background(), &query, variables)
+	if err != nil {
+		log.WithError(err).Fatal("cannot get last tags")
+	}
+
+	r := make([]Release, 0)
+	edges := query.Repository.Refs.Edges
+
+	// reverse order
+	for i := len(edges) - 1; i >= 0; i-- {
+		v := edges[i]
+		if p.tagFilter(v) {
+			tag := p.tagMapper(v, nil)
+			r = append(r, tag)
+		}
+	}
+
+	return r
+}
+
+func (p *GithubProvider) tagFilter(v tagEdge) bool {
+	return p.VersionRegexp.MatchString(v.Node.Target.Tag.Message)
+}
+
+func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []ReleaseItem) Release {
+	ref := tag.Node.Target.Tag.Target.Commit.Oid
+	return Release{
+		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
+		CurrentVersion: strings.Trim(tag.Node.Target.Tag.Message, "\n"),
+		Ref:            ref,
+		Changelog:      changeLog,
+		VersionPattern: p.Pattern,
+	}
 }
