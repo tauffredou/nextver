@@ -23,7 +23,7 @@ func (r *Release) NextVersion() (string, error) {
 	case strings.Contains(r.VersionPattern, "DATE"):
 		return DateVersionCalculator(r)
 	}
-	return "", errors.New("Unknown version calculator")
+	return "", errors.New("unknown version calculator")
 }
 
 func (r *Release) MustNextVersion() string {
