@@ -73,7 +73,7 @@ func (c *ChangelogFormatter) Console() {
 
 	t.WriteHeaders()
 	for i := range r.Changelog {
-		t.WriteRow(consoleDateFormat,
+		t.WriteRow(r.Changelog[i].Date.Format(consoleDateFormat),
 			r.Changelog[i].Author,
 			r.Changelog[i].Kind,
 			r.Changelog[i].Level,
