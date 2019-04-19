@@ -22,7 +22,7 @@ func (t *Table) WriteHeaders() {
 	buffer.WriteString(" ")
 	for i, v := range t.headers {
 		if i != 0 {
-			buffer.WriteString(" | ")
+			buffer.WriteString(" │ ")
 		}
 		buffer.WriteString(pad.Right(v, t.columnSize[i], " "))
 	}
@@ -34,9 +34,9 @@ func (t *Table) WriteHeaders() {
 	buffer.WriteString(" ")
 	for i, _ := range t.headers {
 		if i != 0 {
-			buffer.WriteString(" | ")
+			buffer.WriteString("━┿━")
 		}
-		buffer.WriteString(pad.Right("", t.columnSize[i], "-"))
+		buffer.WriteString(pad.Right("", t.columnSize[i], "━"))
 	}
 	buffer.WriteString("\n")
 	_, _ = t.w.Write(buffer.Bytes())
@@ -64,7 +64,7 @@ func (t *Table) WriteRow(row ...string) {
 	buffer.WriteString(" ")
 	for i, v := range row {
 		if i != 0 {
-			buffer.WriteString(" | ")
+			buffer.WriteString(" │ ")
 		}
 
 		if t.colorizer != nil {

@@ -20,8 +20,8 @@ func TestTableOutput(t *testing.T) {
 	table := NewTable(w, "a", "bb", "ccc", "dddd")
 	table.WriteHeaders()
 
-	expected := ` a | bb | ccc | dddd
- - | -- | --- | ----
+	expected := ` a │ bb │ ccc │ dddd
+ ━━┿━━━━┿━━━━━┿━━━━━
 `
 	assert.Equal(t, expected, b.String())
 
@@ -39,9 +39,9 @@ func TestTableOutputWithRows(t *testing.T) {
 
 	table.WriteHeaders()
 	table.WriteRow(row...)
-	expected := ` beautiful | header   | isn't it                               
- --------- | -------- | ---------------------------------------
- In sed    | accumsan | Lorem ipsum dolor sit amet, consectetur
+	expected := ` beautiful │ header   │ isn't it                               
+ ━━━━━━━━━━┿━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ In sed    │ accumsan │ Lorem ipsum dolor sit amet, consectetur
 `
 	assert.Equal(t, expected, b.String())
 
