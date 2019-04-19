@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"gopkg.in/yaml.v2"
 	"os"
-	"text/template"
 )
 
 type ReleasesFormatter struct {
@@ -27,18 +26,14 @@ func (rf *ReleasesFormatter) Yaml() {
 }
 
 func (r *ReleasesFormatter) Console() {
-	tmpl, err := template.New("releases").Parse(`
-Releases:
-{{ range . }}
-{{ .CurrentVersion }}
-{{- end }}
-`)
-	if err != nil {
-		panic(err)
+	t := NewTable(os.Stdout, "ref", "release")
+	for _, v := range r.releases {
+		_ = t.AnalyseRow(v.Ref, v.CurrentVersion)
 	}
-	err = tmpl.Execute(os.Stdout, r.releases)
-	if err != nil {
-		panic(err)
+
+	t.WriteHeaders()
+	for _, v := range r.releases {
+		t.WriteRow(v.Ref, v.CurrentVersion)
 	}
 
 }
