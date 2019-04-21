@@ -1,9 +1,22 @@
-package provider
+package model
 
 import (
 	"errors"
 	"log"
 	"strings"
+)
+
+const (
+	UNDEFINED = 0
+	PATCH     = 1
+	MINOR     = PATCH << 1
+	MAJOR     = MINOR << 1
+)
+const (
+	SemverRegex              = `^v?(\d+)(\.(\d)+)?(\.(\d)+)?`
+	DateRegexp               = `\d{4}-\d{2}-\d{2}-\d{6}`
+	ConventionalCommitRegexp = `^([a-zA-Z-_]+)(\(([^\):]+)\))?:? ?(.*)$`
+	FirstVersion             = "0.0.0"
 )
 
 type Release struct {

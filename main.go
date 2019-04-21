@@ -12,23 +12,24 @@ var (
 	owner string
 	repo  string
 
-	pattern  = kingpin.Flag("pattern", "Versionning pattern").Short('p').Default("vSEMVER").String()
-	output   = kingpin.Flag("output", "Output format (console, json, yaml)").Short('o').Default("console").String()
-	branch   = kingpin.Flag("branch", "Target branch (default branch if empty)").Short('b').String()
-	logLevel = kingpin.Flag("log-level", "Log level").Default("info").String()
+	pattern      = kingpin.Flag("pattern", "Versionning pattern").Short('p').Default("vSEMVER").String()
+	output       = kingpin.Flag("output", "Output format (console, json, yaml)").Short('o').Default("console").String()
+	branch       = kingpin.Flag("branch", "Target branch (default branch if empty)").Short('b').String()
+	logLevel     = kingpin.Flag("log-level", "Log level").Default("info").String()
+	providerType = kingpin.Flag("provider", "provider").Default("local").String()
 
 	color = kingpin.Flag("color", "Colorize output").Default("true").Bool()
 
 	//get
-	getCommand         = kingpin.Command("get", "")
-	listReleaseCommand = githubCommand(getCommand, "releases", "List releases")
-	changelogCommand   = githubCommand(getCommand, "changelog", "Get changelog")
+	getCommand = kingpin.Command("get", "")
+	_          = githubCommand(getCommand, "releases", "List releases")
+	_          = githubCommand(getCommand, "changelog", "Get changelog")
 
 	//create
 	createCommand = kingpin.Command("create", "")
 
-	createReleaseCommand = createCommand.Command("release", "Create release")
-	releaseTemplate      = createCommand.Flag("template", "Template file").String()
+	_ = createCommand.Command("release", "Create release")
+	_ = createCommand.Flag("template", "Template file").String()
 )
 
 func githubCommand(command *kingpin.CmdClause, name string, help string) *kingpin.CmdClause {
@@ -77,16 +78,15 @@ func main() {
 		f = formatter.NewChangelogFormatter(&dto, *color)
 	}
 
-	switch *output {
-	case "console":
-		f.Console()
-		//formatter.ConsoleOutput(&r, *color)
-	case "json":
-		f.Json()
-		//formatter.JsonOutput(&r)
-	case "yaml":
-		f.Yaml()
-		//formatter.YamlOutput(&r)
+	if f != nil {
+		switch *output {
+		case "console":
+			f.Console()
+		case "json":
+			f.Json()
+		case "yaml":
+			f.Yaml()
+		}
 	}
 
 }

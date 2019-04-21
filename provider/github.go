@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/shurcooL/githubv4"
 	log "github.com/sirupsen/logrus"
+	"github.com/tauffredou/nextver/model"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"regexp"
@@ -28,8 +29,8 @@ func NewGithubProvider(owner string, repo string, token string, pattern string, 
 	httpClient := oauth2.NewClient(context.Background(), src)
 
 	replacer := strings.NewReplacer(
-		"SEMVER", SemverRegex,
-		"DATE", DateRegexp,
+		"SEMVER", model.SemverRegex,
+		"DATE", model.DateRegexp,
 	)
 	return &GithubProvider{
 		Owner:         owner,
@@ -41,7 +42,7 @@ func NewGithubProvider(owner string, repo string, token string, pattern string, 
 	}
 }
 
-func (p *GithubProvider) GetLatestRelease() Release {
+func (p *GithubProvider) GetLatestRelease() model.Release {
 
 	var query struct {
 		Repository struct {
@@ -67,7 +68,7 @@ func (p *GithubProvider) GetLatestRelease() Release {
 	for i := len(tags) - 1; i >= 0; i-- {
 		if p.VersionRegexp.MatchString(tags[i].Node.Target.Tag.Message) {
 			ref := tags[i].Node.Target.Tag.Target.Commit.Oid
-			return Release{
+			return model.Release{
 				Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
 				CurrentVersion: strings.Trim(tags[i].Node.Target.Tag.Message, "\n"),
 				Ref:            ref,
@@ -77,9 +78,9 @@ func (p *GithubProvider) GetLatestRelease() Release {
 		}
 	}
 
-	return Release{
+	return model.Release{
 		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
-		CurrentVersion: FirstVersion,
+		CurrentVersion: model.FirstVersion,
 		Ref:            "",
 		Changelog:      p.getHistory(""),
 		VersionPattern: p.Pattern,
@@ -87,7 +88,7 @@ func (p *GithubProvider) GetLatestRelease() Release {
 
 }
 
-func (p *GithubProvider) getHistory(fromRef string) []ReleaseItem {
+func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 
 	variables := map[string]interface{}{
 		"owner": githubv4.String(p.Owner),
@@ -135,14 +136,14 @@ func (p *GithubProvider) getHistory(fromRef string) []ReleaseItem {
 	}
 	nodes := query.Repository.Ref.Target.Commit.History.Nodes
 
-	result := make([]ReleaseItem, 0)
+	result := make([]model.ReleaseItem, 0)
 
 	for i := range nodes {
 		n := nodes[i]
 		if n.Oid == fromRef {
 			break
 		}
-		ri := NewReleaseItem(n.Author.Name, n.Author.Date, n.Message)
+		ri := model.NewReleaseItem(n.Author.Name, n.Author.Date, n.Message)
 		result = append(result, ri)
 	}
 
@@ -150,7 +151,7 @@ func (p *GithubProvider) getHistory(fromRef string) []ReleaseItem {
 
 }
 
-func (p *GithubProvider) GetReleases() []Release {
+func (p *GithubProvider) GetReleases() []model.Release {
 	log.Debug("Getting release")
 	var query struct {
 		Repository struct {
@@ -170,7 +171,7 @@ func (p *GithubProvider) GetReleases() []Release {
 		log.WithError(err).Fatal("cannot get last tags")
 	}
 
-	r := make([]Release, 0)
+	r := make([]model.Release, 0)
 	edges := query.Repository.Refs.Edges
 
 	// reverse order
@@ -189,9 +190,9 @@ func (p *GithubProvider) tagFilter(v tagEdge) bool {
 	return p.VersionRegexp.MatchString(v.Node.Target.Tag.Message)
 }
 
-func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []ReleaseItem) Release {
+func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []model.ReleaseItem) model.Release {
 	ref := tag.Node.Target.Tag.Target.Commit.Oid
-	return Release{
+	return model.Release{
 		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
 		CurrentVersion: strings.Trim(tag.Node.Target.Tag.Message, "\n"),
 		Ref:            ref,

@@ -1,7 +1,9 @@
-package provider
+package model
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -38,4 +40,18 @@ func DateVersionCalculator(r *Release) (string, error) {
 	date := t.Format("2006-01-02-150405")
 
 	return strings.ReplaceAll(r.VersionPattern, "DATE", date), nil
+}
+
+func ReadSemver(v string) ([]int64, error) {
+	re := regexp.MustCompile(SemverRegex)
+	if re.MatchString(v) {
+		data := re.FindStringSubmatch(v)
+		major, _ := strconv.ParseInt(data[1], 10, 0)
+		minor, _ := strconv.ParseInt(data[3], 10, 0)
+		patch, _ := strconv.ParseInt(data[5], 10, 0)
+		return []int64{major, minor, patch}, nil
+	} else {
+		return nil, fmt.Errorf("cannot read version")
+	}
+
 }

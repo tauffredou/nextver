@@ -1,8 +1,7 @@
 package formatter
 
 import (
-	"github.com/tauffredou/nextver/provider"
-	"time"
+	"github.com/tauffredou/nextver/model"
 )
 
 const consoleDateFormat = "06/01/02 15:04"
@@ -13,16 +12,7 @@ type Formatter interface {
 	Console()
 }
 
-type ReleaseDTO struct {
-	Project        string           `json:"project"`
-	Ref            string           `json:"ref,omitempty"`
-	CurrentVersion string           `json:"current_version"`
-	NextVersion    string           `json:"next_version"`
-	Changelog      []ReleaseItemDTO `json:"changelog"`
-	VersionPattern string           `json:"version_pattern"`
-}
-
-func MapReleases(items []provider.Release) []ReleaseDTO {
+func MapReleases(items []model.Release) []ReleaseDTO {
 	res := make([]ReleaseDTO, len(items))
 	for i := range items {
 		res[i] = MapRelease(&items[i])
@@ -30,7 +20,7 @@ func MapReleases(items []provider.Release) []ReleaseDTO {
 	return res
 }
 
-func MapRelease(release *provider.Release) ReleaseDTO {
+func MapRelease(release *model.Release) ReleaseDTO {
 
 	return ReleaseDTO{
 		Project:        release.Project,
@@ -42,17 +32,7 @@ func MapRelease(release *provider.Release) ReleaseDTO {
 	}
 }
 
-type ReleaseItemDTO struct {
-	Kind   string    `json:"kind,omitempty"`
-	Scope  string    `json:"scope,omitempty"`
-	Title  string    `json:"title"`
-	Detail string    `json:"detail,omitempty"`
-	Level  string    `json:"level"`
-	Author string    `json:"author"`
-	Date   time.Time `json:"date"`
-}
-
-func mapReleaseItem(items []provider.ReleaseItem) []ReleaseItemDTO {
+func mapReleaseItem(items []model.ReleaseItem) []ReleaseItemDTO {
 	res := make([]ReleaseItemDTO, len(items))
 	for i := range items {
 		item := items[i]

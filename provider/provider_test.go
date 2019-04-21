@@ -2,19 +2,34 @@ package provider
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/tauffredou/nextver/model"
+	"log"
 	"testing"
+	"time"
 )
 
 var (
-	changeLog = []ReleaseItem{
-		NewReleaseItem("tauf", testDate, "feat(feature-1234): commit message"),
-		NewReleaseItem("tauf", testDate, "fix(feature-1234): commit message"),
-		NewReleaseItem("tauf", testDate, "empty"),
+	changeLog = []model.ReleaseItem{
+		model.NewReleaseItem("tauf", testDate, "feat(feature-1234): commit message"),
+		model.NewReleaseItem("tauf", testDate, "fix(feature-1234): commit message"),
+		model.NewReleaseItem("tauf", testDate, "empty"),
 	}
 )
 
+var (
+	testDate = MustParse(time.RFC3339, "2010-01-02T12:34:00Z")
+)
+
+func MustParse(layout, value string) time.Time {
+	t, err := time.Parse(layout, value)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return t
+}
+
 func TestRelease_NextVersion_withSemver_withPrefix(t *testing.T) {
-	r := Release{
+	r := model.Release{
 		Changelog:      changeLog,
 		CurrentVersion: "v2.0.1",
 		VersionPattern: "vSEMVER",
@@ -27,7 +42,7 @@ func TestRelease_NextVersion_withSemver_withPrefix(t *testing.T) {
 }
 
 func TestRelease_NextVersion_withSemver_withoutPrefix(t *testing.T) {
-	r := Release{
+	r := model.Release{
 		Changelog:      changeLog,
 		CurrentVersion: "2.0.1",
 		VersionPattern: "SEMVER",
@@ -40,7 +55,7 @@ func TestRelease_NextVersion_withSemver_withoutPrefix(t *testing.T) {
 }
 
 func TestRelease_NextVersion_withDate(t *testing.T) {
-	r := Release{
+	r := model.Release{
 		Changelog:      changeLog,
 		CurrentVersion: "release-2019-03-29-161011 ",
 		VersionPattern: "release-DATE",
