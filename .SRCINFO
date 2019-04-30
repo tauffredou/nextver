@@ -1,0 +1,12 @@
+pkgbase = nextver-git
+	pkgdesc = Calculates the next version from the git history, using the "conventional commits" specification
+	pkgver = 0.0.0
+	pkgrel = 1
+	url = https://github.com/tauffredou/nextver
+	arch = x86_64
+	makedepends = go
+	source = nextver::git+https://github.com/tauffredou/nextver.git
+	md5sums = SKIP
+
+pkgname = nextver-git
+
