@@ -61,31 +61,45 @@ release-DATE  -> release-2019-04-01-133742
 ``` 
 
 #### Default options
+SEMVER (vSEMVER) is the default release pattern
 ```
-nextver --github-owner=tauffredou --github-repo=test-semver
+$ nextver get next-version --github-owner=tauffredou --github-repo=test-semver
+v1.0.0
 ```
 
-Will output 
-```
-Current release version	: 0.0.0
-Next release version	: v0.1.0
+Getting details
 
-Commit log:
-    Kind    Level    Message
----------|---------|------------------------------
+```
+$ nextver get changelog --github-owner=tauffredou --github-repo=test-semver 
+Current release version : 0.0.0
+Next release version    : v1.0.0
+
+Changelog:
+ Date           │ Author           │ Kind    │ Level │ Scope │ Title        
+ ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━┿━━━━━━━┿━━━━━━━━━━━━━━
+ 19/03/30 12:44 │ Thomas Auffredou │ chore   │ MAJOR │ test2 │ some change  
+ 19/03/30 12:29 │ Thomas Auffredou │ feat    │ MINOR │ test  │ super feature
+ 19/03/30 11:53 │ Thomas Auffredou │ initial │       │       │ commit       
+
 ```
 
 #### Using date release
 ```
-nextver --github-owner=tauffredou --github-repo=test-semver --pattern=myprefix-DATE
+$ nextver get next-version --github-owner=tauffredou --github-repo=test-semver --pattern=myprefix-DATE
+myprefix-2019-05-01-110159
 ```
-This will output
-```
-Current release version	: 0.0.0
-Next release version	: myprefix-2019-04-01-112621
 
-Commit log:
-    Kind    Level    Message
-...
+The DATE pattern uses only time, ignoring the semantic versionning and the conventional commit convensions.
+
+```
+Current release version : 0.0.0
+Next release version    : myprefix-2019-05-01-111206
+
+Changelog:
+ Date           │ Author           │ Kind    │ Level │ Scope │ Title        
+ ━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━━━━━━┿━━━━━━━━━┿━━━━━━━┿━━━━━━━┿━━━━━━━━━━━━━━
+ 19/03/30 12:44 │ Thomas Auffredou │ chore   │ MAJOR │ test2 │ some change  
+ 19/03/30 12:29 │ Thomas Auffredou │ feat    │ MINOR │ test  │ super feature
+ 19/03/30 11:53 │ Thomas Auffredou │ initial │       │       │ commit  
 ```
 
