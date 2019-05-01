@@ -13,20 +13,29 @@ go build
 ## Usage
 
 ```
-usage: nextver --github-token=GITHUB-TOKEN --github-owner=GITHUB-OWNER --github-repo=GITHUB-REPO [<flags>]
+usage: nextver [<flags>] <command> [<args> ...]
 
 Flags:
-      --help                     Show context-sensitive help (also try --help-long and --help-man).
-      --github-token=GITHUB-TOKEN  
-                                 Github token
-      --github-owner=GITHUB-OWNER  
-                                 Github owner
-      --color                    Colorize output
-      --github-repo=GITHUB-REPO  Github repo
-  -p, --pattern="vSEMVER"        Versionning pattern
-  -o, --output="console"         Output format (console, json, yaml)
-  -b, --branch=BRANCH            Target branch (default branch if empty)
+      --help               Show context-sensitive help (also try --help-long and --help-man).
+  -p, --pattern="vSEMVER"  Versionning pattern
+  -o, --output="console"   Output format (console, json, yaml)
+  -b, --branch=BRANCH      Target branch (default branch if empty)
+      --log-level="info"   Log level
+      --provider="local"   provider
+      --color              Colorize output
 
+Commands:
+  help [<command>...]
+    Show help.
+
+  get releases --github-token=GITHUB-TOKEN --github-owner=GITHUB-OWNER --github-repo=GITHUB-REPO
+    List releases
+
+  get changelog --github-token=GITHUB-TOKEN --github-owner=GITHUB-OWNER --github-repo=GITHUB-REPO
+    Get changelog
+
+  get next-version --github-token=GITHUB-TOKEN --github-owner=GITHUB-OWNER --github-repo=GITHUB-REPO
+    Get next version
 
 ```
 
