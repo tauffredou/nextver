@@ -24,6 +24,7 @@ var (
 	getCommand = kingpin.Command("get", "")
 	_          = githubCommand(getCommand, "releases", "List releases")
 	_          = githubCommand(getCommand, "changelog", "Get changelog")
+	_          = githubCommand(getCommand, "next-version", "Get next version")
 
 	//create
 	createCommand = kingpin.Command("create", "")
@@ -63,19 +64,17 @@ func main() {
 	log.WithField("command", parse).Debug("Action")
 
 	var f formatter.Formatter
-	switch parse {
-	case "get releases":
-		r := github().GetReleases()
-		m := formatter.MapReleases(r)
-		f = formatter.NewReleasesFormatter(m)
 
+	switch parse {
+	case "get next-version":
+		f = getNextVersion()
+		// Releases
+	case "get releases":
+		f = getReleases()
 	case "create release":
 		log.Warn("not implemented yet")
-
 	case "get changelog":
-		r := github().GetLatestRelease()
-		dto := formatter.MapRelease(&r)
-		f = formatter.NewChangelogFormatter(&dto, *color)
+		f = getChangelog()
 	}
 
 	if f != nil {
@@ -89,4 +88,22 @@ func main() {
 		}
 	}
 
+}
+
+func getNextVersion() formatter.Formatter {
+	r := github().GetLatestRelease()
+	v, _ := r.NextVersion()
+	return &formatter.SimpleFormatter{"next-version", v}
+}
+
+func getReleases() formatter.Formatter {
+	r := github().GetReleases()
+	m := formatter.MapReleases(r)
+	return formatter.NewReleasesFormatter(m)
+}
+
+func getChangelog() formatter.Formatter {
+	r := github().GetLatestRelease()
+	dto := formatter.MapRelease(&r)
+	return formatter.NewChangelogFormatter(&dto, *color)
 }
