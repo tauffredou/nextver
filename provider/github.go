@@ -12,15 +12,20 @@ import (
 )
 
 type GithubProvider struct {
+	client        *githubv4.Client
+	VersionRegexp *regexp.Regexp
+	config        *GithubProviderConfig
 	Owner         string
 	Repo          string
-	client        *githubv4.Client
-	Branch        string
-	Pattern       string
-	VersionRegexp *regexp.Regexp
 }
 
-func NewGithubProvider(owner string, repo string, token string, pattern string, branch string) *GithubProvider {
+type GithubProviderConfig struct {
+	Branch    string
+	Pattern   string
+	BeforeRef string
+}
+
+func NewGithubProvider(owner string, repo string, token string, config *GithubProviderConfig) *GithubProvider {
 	log.WithField("token", token).Debug("Init github provider")
 
 	src := oauth2.StaticTokenSource(
@@ -36,9 +41,8 @@ func NewGithubProvider(owner string, repo string, token string, pattern string, 
 		Owner:         owner,
 		Repo:          repo,
 		client:        githubv4.NewClient(httpClient),
-		Branch:        branch,
-		Pattern:       pattern,
-		VersionRegexp: regexp.MustCompile(replacer.Replace(pattern)),
+		config:        config,
+		VersionRegexp: regexp.MustCompile(replacer.Replace(config.Pattern)),
 	}
 }
 
@@ -73,7 +77,7 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 				CurrentVersion: strings.Trim(tags[i].Node.Target.Tag.Message, "\n"),
 				Ref:            ref,
 				Changelog:      p.getHistory(ref),
-				VersionPattern: p.Pattern,
+				VersionPattern: p.config.Pattern,
 			}
 		}
 	}
@@ -83,7 +87,7 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 		CurrentVersion: model.FirstVersion,
 		Ref:            "",
 		Changelog:      p.getHistory(""),
-		VersionPattern: p.Pattern,
+		VersionPattern: p.config.Pattern,
 	}
 
 }
@@ -95,8 +99,8 @@ func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 		"name":  githubv4.String(p.Repo),
 	}
 
-	if p.Branch != "" {
-		variables["branch"] = githubv4.String(p.Branch)
+	if p.config.Branch != "" {
+		variables["branch"] = githubv4.String(p.config.Branch)
 	} else {
 		// Get default branch
 		var query struct {
@@ -197,6 +201,6 @@ func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []model.ReleaseItem) m
 		CurrentVersion: strings.Trim(tag.Node.Target.Tag.Message, "\n"),
 		Ref:            ref,
 		Changelog:      changeLog,
-		VersionPattern: p.Pattern,
+		VersionPattern: p.config.Pattern,
 	}
 }
