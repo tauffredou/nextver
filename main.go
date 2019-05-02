@@ -16,7 +16,7 @@ var (
 	owner string
 	repo  string
 
-	pattern      = kingpin.Flag("pattern", "Versionning pattern").Short('p').Default("vSEMVER").String()
+	pattern      = kingpin.Flag("pattern", "Versionning pattern. Read from .nextver/config.yml by default").Short('p').String()
 	output       = kingpin.Flag("output", "Output format (console, json, yaml)").Short('o').Default("console").String()
 	branch       = kingpin.Flag("branch", "Target branch (default branch if empty)").Short('b').String()
 	logLevel     = kingpin.Flag("log-level", "Log level").Default("info").String()
@@ -38,6 +38,7 @@ var (
 	_ = createCommand.Flag("template", "Template file").String()
 
 	defaultHubConfig = path.Join(MustString(os.UserHomeDir()), ".config", "hub")
+	githubProvider   *provider.GithubProvider
 )
 
 func MustString(s string, err error) string {
@@ -56,23 +57,31 @@ func githubCommand(command *kingpin.CmdClause, name string, help string) *kingpi
 	return c
 }
 
+// github lazy load github provider
 func github() *provider.GithubProvider {
-	if token == "" {
-		t, err := readHubToken(defaultHubConfig)
-		if err != nil {
-			log.Fatalf("required flag '--%s'", "github-token")
-		}
-		token = t
+	if githubProvider == nil {
 
+		if token == "" {
+			t, err := readHubToken(defaultHubConfig)
+			if err != nil {
+				log.Fatalf("required flag '--%s'", "github-token")
+			}
+			token = t
+		}
+
+		githubProvider = provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
+			Pattern:   *pattern,
+			Branch:    *branch,
+			BeforeRef: *beforeRef,
+		})
 	}
 
-	return provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
-		Pattern:   *pattern,
-		Branch:    *branch,
-		BeforeRef: *beforeRef,
-	})
+	return githubProvider
+
 }
 
+// readHubToken read token form hub config when available
+// default location is ~/.config/hub
 func readHubToken(f string) (string, error) {
 
 	var v struct {

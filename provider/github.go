@@ -7,6 +7,7 @@ import (
 	"github.com/tauffredou/nextver/model"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"gopkg.in/yaml.v2"
 	"regexp"
 	"strings"
 )
@@ -17,6 +18,8 @@ type GithubProvider struct {
 	config        *GithubProviderConfig
 	Owner         string
 	Repo          string
+	Pattern       string
+	Branch        string
 }
 
 type GithubProviderConfig struct {
@@ -69,6 +72,7 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 	tags := query.Repository.Refs.Edges
 
 	// reverse order
+	pattern := p.mustGetPattern()
 	for i := len(tags) - 1; i >= 0; i-- {
 		if p.VersionRegexp.MatchString(tags[i].Node.Target.Tag.Message) {
 			ref := tags[i].Node.Target.Tag.Target.Commit.Oid
@@ -77,7 +81,7 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 				CurrentVersion: strings.Trim(tags[i].Node.Target.Tag.Message, "\n"),
 				Ref:            ref,
 				Changelog:      p.getHistory(ref),
-				VersionPattern: p.config.Pattern,
+				VersionPattern: pattern,
 			}
 		}
 	}
@@ -87,17 +91,14 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 		CurrentVersion: model.FirstVersion,
 		Ref:            "",
 		Changelog:      p.getHistory(""),
-		VersionPattern: p.config.Pattern,
+		VersionPattern: pattern,
 	}
 
 }
 
 func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 
-	variables := map[string]interface{}{
-		"owner": githubv4.String(p.Owner),
-		"name":  githubv4.String(p.Repo),
-	}
+	variables := p.defaultVariables()
 
 	if p.config.Branch != "" {
 		variables["branch"] = githubv4.String(p.config.Branch)
@@ -203,4 +204,92 @@ func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []model.ReleaseItem) m
 		Changelog:      changeLog,
 		VersionPattern: p.config.Pattern,
 	}
+}
+
+func (p *GithubProvider) mustGetPattern() string {
+	log.Debug("get pattern")
+	if p.Pattern != "" {
+		return p.Pattern
+	}
+
+	if p.config.Pattern != "" {
+		p.Pattern = p.config.Pattern
+		return p.Pattern
+	}
+
+	/* graphql */
+
+	variables := p.defaultVariables()
+	variables["file"] = githubv4.String(p.mustGetBranch() + ":" + model.DefaultConfigFile)
+
+	// Query config file content without checkout
+	var query struct {
+		Repository struct {
+			Content struct {
+				Blob struct {
+					Text string
+				} `graphql:"... on Blob"`
+			} `graphql:"content:object(expression: $file)"`
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	err := p.client.Query(context.Background(), &query, variables)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	config := query.Repository.Content.Blob.Text
+	if config == "" {
+		p.Pattern = model.DefaultPattern
+		log.WithField("pattern", p.Pattern).Debug("got pattern from default")
+	} else {
+		var c model.Config
+		err := yaml.Unmarshal([]byte(config), &c)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		p.Pattern = c.Pattern
+
+		log.WithField("pattern", p.Pattern).Debug("got pattern from github")
+	}
+	return p.Pattern
+}
+
+func (p *GithubProvider) defaultVariables() map[string]interface{} {
+	return map[string]interface{}{
+		"owner": githubv4.String(p.Owner),
+		"name":  githubv4.String(p.Repo),
+	}
+}
+
+// mustGetBranch get the target branch by order from:
+// 1. local param
+// 2. repository default branch
+func (p *GithubProvider) mustGetBranch() string {
+	if p.Branch != "" {
+		return p.Branch
+	}
+
+	if p.config.Branch != "" {
+		p.Branch = p.config.Branch
+		return p.Branch
+	}
+
+	variables := p.defaultVariables()
+	// Get default branch
+	var query struct {
+		Repository struct {
+			DefaultBranchRef struct {
+				Name string
+			}
+		} `graphql:"repository(owner: $owner, name: $name)"`
+	}
+
+	err := p.client.Query(context.Background(), &query, variables)
+	if err != nil {
+		log.Fatal(err)
+	}
+	p.Branch = query.Repository.DefaultBranchRef.Name
+	return p.Branch
 }
