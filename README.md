@@ -1,3 +1,17 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [](#)
+  - [Build](#build)
+  - [Usage](#usage)
+    - [Authentication](#authentication)
+    - [Release pattern](#release-pattern)
+      - [Default options](#default-options)
+      - [Using date release](#using-date-release)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # 
 
 This application calculates the next version from the git history.
@@ -41,9 +55,19 @@ Commands:
 
 ### Authentication
 
+Create a Github access token with at least the following scopes:
+![github_scope](doc/images/github_scopes.png)
+
+
+Then use this token using the option
+```
+nextver --github-token=xxxxxxxxx ...
+```
+or exporting the environment variable
 ```
 export GITHUB_TOKEN=xxxxxxxxx
 ```
+
 
 ### Release pattern
 
