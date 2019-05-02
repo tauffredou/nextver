@@ -56,6 +56,7 @@ Commands:
 ### Authentication
 
 Create a Github access token with at least the following scopes:
+
 ![github_scope](doc/images/github_scopes.png)
 
 
