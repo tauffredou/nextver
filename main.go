@@ -5,6 +5,10 @@ import (
 	"github.com/tauffredou/nextver/formatter"
 	"github.com/tauffredou/nextver/provider"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
+	"path"
 )
 
 var (
@@ -32,22 +36,63 @@ var (
 
 	_ = createCommand.Command("release", "Create release")
 	_ = createCommand.Flag("template", "Template file").String()
+
+	defaultHubConfig = path.Join(MustString(os.UserHomeDir()), ".config", "hub")
 )
+
+func MustString(s string, err error) string {
+	if err != nil {
+		log.Fatal(err)
+	}
+	return s
+}
 
 func githubCommand(command *kingpin.CmdClause, name string, help string) *kingpin.CmdClause {
 	c := command.Command(name, help)
-	c.Flag("github-token", "Github token").Envar("GITHUB_TOKEN").Required().StringVar(&token)
+	c.Flag("github-token", "Github token. Can be read form hub config file").Envar("GITHUB_TOKEN").StringVar(&token)
+
 	c.Flag("github-owner", "Github owner").Required().StringVar(&owner)
 	c.Flag("github-repo", "Github repo").Required().StringVar(&repo)
 	return c
 }
 
 func github() *provider.GithubProvider {
+	if token == "" {
+		t, err := readHubToken(defaultHubConfig)
+		if err != nil {
+			log.Fatalf("required flag '--%s'", "github-token")
+		}
+		token = t
+
+	}
+
 	return provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
 		Pattern:   *pattern,
 		Branch:    *branch,
 		BeforeRef: *beforeRef,
 	})
+}
+
+func readHubToken(f string) (string, error) {
+
+	var v struct {
+		Github []struct {
+			Token string `yaml:"oauth_token"`
+		} `yaml:"github.com,flow"`
+	}
+
+	if _, err := os.Stat(f); err == nil {
+		bytes, _ := ioutil.ReadFile(f)
+		err := yaml.Unmarshal(bytes, &v)
+		if err != nil {
+			return "", err
+		}
+
+		return v.Github[0].Token, nil
+	} else {
+		return "", err
+	}
+
 }
 
 func MustSetLoglevel(level string) {
