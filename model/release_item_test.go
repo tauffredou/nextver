@@ -51,6 +51,22 @@ func TestNewReleaseItem_withSpecialChars(t *testing.T) {
 	assert.Equal(t, ri, expected)
 }
 
+func TestNewReleaseItem_withSimpleCommit(t *testing.T) {
+	ri := NewReleaseItem("tauf", testDate, "some simple commit")
+
+	expected := ReleaseItem{
+		Kind:   "",
+		Scope:  "",
+		Detail: "",
+		Title:  "some simple commit",
+		Level:  UNDEFINED,
+		Author: "tauf",
+		Date:   testDate,
+	}
+
+	assert.Equal(t, ri, expected)
+}
+
 func TestNewReleaseItem_withoutScope(t *testing.T) {
 	ri := NewReleaseItem("tauf", testDate, "feat: pouet")
 
