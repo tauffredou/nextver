@@ -21,10 +21,11 @@ var (
 	color = kingpin.Flag("color", "Colorize output").Default("true").Bool()
 
 	//get
-	getCommand = kingpin.Command("get", "")
-	_          = githubCommand(getCommand, "releases", "List releases")
-	_          = githubCommand(getCommand, "changelog", "Get changelog")
-	_          = githubCommand(getCommand, "next-version", "Get next version")
+	getCommand       = kingpin.Command("get", "")
+	_                = githubCommand(getCommand, "releases", "List releases")
+	changelogCommand = githubCommand(getCommand, "changelog", "Get changelog")
+	beforeRef        = changelogCommand.Flag("before", "").String()
+	_                = githubCommand(getCommand, "next-version", "Get next version")
 
 	//create
 	createCommand = kingpin.Command("create", "")
@@ -42,7 +43,11 @@ func githubCommand(command *kingpin.CmdClause, name string, help string) *kingpi
 }
 
 func github() *provider.GithubProvider {
-	return provider.NewGithubProvider(owner, repo, token, *pattern, *branch)
+	return provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
+		Pattern:   *pattern,
+		Branch:    *branch,
+		BeforeRef: *beforeRef,
+	})
 }
 
 func MustSetLoglevel(level string) {
@@ -93,7 +98,7 @@ func main() {
 func getNextVersion() formatter.Formatter {
 	r := github().GetLatestRelease()
 	v, _ := r.NextVersion()
-	return &formatter.SimpleFormatter{"next-version", v}
+	return &formatter.SimpleFormatter{Key: "next-version", Value: v}
 }
 
 func getReleases() formatter.Formatter {
