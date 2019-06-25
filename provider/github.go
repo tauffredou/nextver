@@ -28,7 +28,10 @@ type GithubProviderConfig struct {
 	BeforeRef string
 }
 
-func NewGithubProvider(owner string, repo string, token string, config *GithubProviderConfig) *GithubProvider {
+func NewGithubProvider(owner string, repo string, token string, config *GithubProviderConfig) (*GithubProvider, error) {
+	if config == nil {
+		return nil, &ConfigurationError{}
+	}
 	log.WithField("token", token).Debug("Init github provider")
 
 	src := oauth2.StaticTokenSource(
@@ -36,17 +39,20 @@ func NewGithubProvider(owner string, repo string, token string, config *GithubPr
 	)
 	httpClient := oauth2.NewClient(context.Background(), src)
 
-	replacer := strings.NewReplacer(
-		"SEMVER", model.SemverRegex,
-		"DATE", model.DateRegexp,
-	)
 	return &GithubProvider{
-		Owner:         owner,
-		Repo:          repo,
-		client:        githubv4.NewClient(httpClient),
-		config:        config,
-		VersionRegexp: regexp.MustCompile(replacer.Replace(config.Pattern)),
-	}
+		Owner:  owner,
+		Repo:   repo,
+		client: githubv4.NewClient(httpClient),
+		config: config,
+	}, nil
+}
+
+type ConfigurationError struct {
+	message string
+}
+
+func (e *ConfigurationError) Error() string {
+	return "Empty configuration"
 }
 
 func (p *GithubProvider) GetLatestRelease() model.Release {
@@ -72,9 +78,9 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 	tags := query.Repository.Refs.Edges
 
 	// reverse order
-	pattern := p.mustGetPattern()
+	pattern := p.MustGetPattern()
 	for i := len(tags) - 1; i >= 0; i-- {
-		if p.VersionRegexp.MatchString(tags[i].Node.Target.Tag.Message) {
+		if p.GetVersionRegexp().MatchString(tags[i].Node.Target.Tag.Message) {
 			ref := tags[i].Node.Target.Tag.Target.Commit.Oid
 			return model.Release{
 				Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
@@ -156,6 +162,7 @@ func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 
 }
 
+//GetReleases returns the list of tags matching the release pattern
 func (p *GithubProvider) GetReleases() []model.Release {
 	log.Debug("Getting release")
 	var query struct {
@@ -192,7 +199,7 @@ func (p *GithubProvider) GetReleases() []model.Release {
 }
 
 func (p *GithubProvider) tagFilter(v tagEdge) bool {
-	return p.VersionRegexp.MatchString(v.Node.Target.Tag.Message)
+	return p.GetVersionRegexp().MatchString(v.Node.Target.Tag.Message)
 }
 
 func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []model.ReleaseItem) model.Release {
@@ -202,11 +209,12 @@ func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []model.ReleaseItem) m
 		CurrentVersion: strings.Trim(tag.Node.Target.Tag.Message, "\n"),
 		Ref:            ref,
 		Changelog:      changeLog,
-		VersionPattern: p.config.Pattern,
+		VersionPattern: p.MustGetPattern(),
 	}
 }
 
-func (p *GithubProvider) mustGetPattern() string {
+//MustGetPattern tries to fetch the config filee
+func (p *GithubProvider) MustGetPattern() string {
 	log.Debug("get pattern")
 	if p.Pattern != "" {
 		return p.Pattern
@@ -292,4 +300,18 @@ func (p *GithubProvider) mustGetBranch() string {
 	}
 	p.Branch = query.Repository.DefaultBranchRef.Name
 	return p.Branch
+}
+
+func (p *GithubProvider) GetVersionRegexp() *regexp.Regexp {
+	if p.VersionRegexp != nil {
+		return p.VersionRegexp
+	}
+
+	replacer := strings.NewReplacer(
+		"SEMVER", model.SemverRegex,
+		"DATE", model.DateRegexp,
+	)
+
+	p.VersionRegexp = regexp.MustCompile(replacer.Replace(p.MustGetPattern()))
+	return p.VersionRegexp
 }
