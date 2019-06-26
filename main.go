@@ -28,7 +28,7 @@ var (
 	getCommand       = kingpin.Command("get", "")
 	_                = githubCommand(getCommand, "releases", "List releases")
 	changelogCommand = githubCommand(getCommand, "changelog", "Get changelog")
-	beforeRef        = changelogCommand.Flag("before", "").String()
+	release          = changelogCommand.Flag("release", "Changelog for a specific release").String()
 	_                = githubCommand(getCommand, "next-version", "Get next version")
 
 	//create
@@ -69,10 +69,10 @@ func github() *provider.GithubProvider {
 			token = t
 		}
 
-		githubProvider = provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
+		githubProvider, _ = provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
 			Pattern:   *pattern,
 			Branch:    *branch,
-			BeforeRef: *beforeRef,
+			BeforeRef: *release,
 		})
 	}
 

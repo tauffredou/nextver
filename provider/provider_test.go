@@ -66,3 +66,22 @@ func TestRelease_NextVersion_withDate(t *testing.T) {
 	assert.Regexp(t, `release-\d{4}-\d{2}-\d{2}-\d{6}`, v)
 
 }
+
+func TestRelease_NextVersion_withEmptyChangelog(t *testing.T) {
+	changeLog = []model.ReleaseItem{}
+
+	r := model.Release{
+		Changelog:      changeLog,
+		CurrentVersion: "v1.0.0 ",
+		VersionPattern: "vSEMVER",
+	}
+
+	v, _ := r.NextVersion()
+
+	assert.Regexp(t, "v1.0.0", v)
+
+}
+
+func TestNextRelease(t *testing.T) {
+
+}

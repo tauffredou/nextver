@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const DATE_FORMAT = "2006-01-02-150405"
+
 func SemverCalculator(r *Release) (string, error) {
 	mmp, err := ReadSemver(r.CurrentVersion)
 	if err != nil {
@@ -37,7 +39,7 @@ func SemverCalculator(r *Release) (string, error) {
 func DateVersionCalculator(r *Release) (string, error) {
 	t := time.Now()
 
-	date := t.Format("2006-01-02-150405")
+	date := t.Format(DATE_FORMAT)
 
 	return strings.ReplaceAll(r.VersionPattern, "DATE", date), nil
 }

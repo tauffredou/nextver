@@ -2,7 +2,7 @@ package model
 
 import (
 	"errors"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -13,7 +13,7 @@ const (
 	MAJOR     = MINOR << 1
 )
 const (
-	SemverRegex              = `^v?(\d+)(\.(\d)+)?(\.(\d)+)?`
+	SemverRegex              = `v?(\d+)(\.(\d)+)?(\.(\d)+)?`
 	DateRegexp               = `\d{4}-\d{2}-\d{2}-\d{6}`
 	ConventionalCommitRegexp = `^([a-zA-Z-_]+)(\(([^\):]+)\))?: ?(.*)$`
 	FirstVersion             = "0.0.0"
@@ -30,12 +30,16 @@ type Release struct {
 
 //NextVersion calculates next semver version from commits
 func (r *Release) NextVersion() (string, error) {
-	switch {
-	case strings.Contains(r.VersionPattern, "SEMVER"):
+	log.WithField("VersionPattern", r.VersionPattern).Debug("NextVersion")
+
+	if strings.Contains(r.VersionPattern, "SEMVER") {
 		return SemverCalculator(r)
-	case strings.Contains(r.VersionPattern, "DATE"):
+	}
+
+	if strings.Contains(r.VersionPattern, "DATE") {
 		return DateVersionCalculator(r)
 	}
+
 	return "", errors.New("unknown version calculator")
 }
 

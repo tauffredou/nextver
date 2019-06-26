@@ -1,0 +1,57 @@
+{
+  "data": {
+    "repository": {
+      "ref": {
+        "target": {
+          "history": {
+            "nodes": [
+              {
+                "message": "feat(test): change f1",
+                "oid": "1c23cc36d1383b82198af6ee04fe44b820b6a550",
+                "author": {
+                  "name": "Thomas Auffredou",
+                  "email": "thomas.auffredou@gmail.com"
+                }
+              },
+              {
+                "message": "add nextver config file",
+                "oid": "784e8b02254bae917a276691fd45b8256fb491e8",
+                "author": {
+                  "name": "Thomas Auffredou",
+                  "email": "thomas.auffredou@gmail.com"
+                }
+              },
+              {
+                "message": "chore(test2): some change\n\nBREAKING CHANGE",
+                "oid": "14c9b1a0e9edb211596be27361025ce748e28f98",
+                "author": {
+                  "name": "Thomas Auffredou",
+                  "email": "thomas.auffredou@gmail.com"
+                }
+              },
+              {
+                "message": "feat(test): super feature",
+                "oid": "fc8b62356ab9ba6caa61c3e82499e86f63f46062",
+                "author": {
+                  "name": "Thomas Auffredou",
+                  "email": "thomas.auffredou@gmail.com"
+                }
+              },
+              {
+                "message": "Initial commit",
+                "oid": "236be09573257deb629ccc650245e5c616221a7f",
+                "author": {
+                  "name": "Thomas Auffredou",
+                  "email": "thomas.auffredou@gmail.com"
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

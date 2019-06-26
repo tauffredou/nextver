@@ -3,7 +3,7 @@
 all: test build
 
 test:
-	go test ./...
+	go test -coverprofile=coverage.out ./...
 
 build:
 	go build

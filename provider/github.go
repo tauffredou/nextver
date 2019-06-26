@@ -7,7 +7,6 @@ import (
 	"github.com/tauffredou/nextver/model"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	"gopkg.in/yaml.v2"
 	"regexp"
 	"strings"
 )
@@ -29,10 +28,11 @@ type GithubProviderConfig struct {
 }
 
 func NewGithubProvider(owner string, repo string, token string, config *GithubProviderConfig) (*GithubProvider, error) {
-	if config == nil {
+	if owner == "" || repo == "" || token == "" || config == nil {
 		return nil, &ConfigurationError{}
 	}
-	log.WithField("token", token).Debug("Init github provider")
+
+	log.WithField("token", obfuscateToken(token)).Debug("Init github provider")
 
 	src := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
@@ -47,44 +47,46 @@ func NewGithubProvider(owner string, repo string, token string, config *GithubPr
 	}, nil
 }
 
-type ConfigurationError struct {
-	message string
+func obfuscateToken(token string) string {
+	strlen := len(token)
+	var sb strings.Builder
+	for pos, char := range token {
+		if pos < 2 || pos > strlen-3 {
+			sb.WriteRune(char)
+		} else {
+			sb.WriteRune('*')
+		}
+	}
+	return sb.String()
 }
 
+type ConfigurationError struct{}
+
 func (e *ConfigurationError) Error() string {
-	return "Empty configuration"
+	return "Invalid configuration"
 }
 
 func (p *GithubProvider) GetLatestRelease() model.Release {
 
-	var query struct {
-		Repository struct {
-			Refs struct {
-				Edges []tagEdge
-			} `graphql:"refs(refPrefix: \"refs/tags/\", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC})"`
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
+	var query latestReleasesQuery
 
-	variables := map[string]interface{}{
-		"owner": githubv4.String(p.Owner),
-		"name":  githubv4.String(p.Repo),
-	}
-
-	err := p.client.Query(context.Background(), &query, variables)
+	err := p.queryLatestRelease(&query)
 	if err != nil {
 		log.WithError(err).Fatal("cannot get last tags")
 	}
 
-	tags := query.Repository.Refs.Edges
+	tags := query.Repository.Refs.Nodes
 
 	// reverse order
 	pattern := p.MustGetPattern()
 	for i := len(tags) - 1; i >= 0; i-- {
-		if p.GetVersionRegexp().MatchString(tags[i].Node.Target.Tag.Message) {
-			ref := tags[i].Node.Target.Tag.Target.Commit.Oid
+		tag, _ := query.getTag(i)
+
+		if p.GetVersionRegexp().MatchString(tag.getId()) {
+			ref := tag.getCommitId()
 			return model.Release{
 				Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
-				CurrentVersion: strings.Trim(tags[i].Node.Target.Tag.Message, "\n"),
+				CurrentVersion: strings.Trim(tag.Message, "\n"),
 				Ref:            ref,
 				Changelog:      p.getHistory(ref),
 				VersionPattern: pattern,
@@ -102,55 +104,27 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 
 }
 
+func (p *GithubProvider) queryLatestRelease(query *latestReleasesQuery) error {
+	variables := map[string]interface{}{
+		"owner": githubv4.String(p.Owner),
+		"name":  githubv4.String(p.Repo),
+	}
+
+	return p.client.Query(context.Background(), query, variables)
+}
+
 func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 
 	variables := p.defaultVariables()
-
-	if p.config.Branch != "" {
-		variables["branch"] = githubv4.String(p.config.Branch)
-	} else {
-		// Get default branch
-		var query struct {
-			Repository struct {
-				DefaultBranchRef struct {
-					Name string
-				}
-			} `graphql:"repository(owner: $owner, name: $name)"`
-		}
-
-		err := p.client.Query(context.Background(), &query, variables)
-		if err != nil {
-			log.Fatal(err)
-		}
-		variables["branch"] = githubv4.String(query.Repository.DefaultBranchRef.Name)
-	}
-
+	variables["branch"] = githubv4.String(p.mustGetBranch())
 	variables["itemsCount"] = githubv4.Int(50)
-	var query struct {
-		Repository struct {
-			Ref struct {
-				Target struct {
-					Commit struct {
-						History struct {
-							PageInfo PageInfo
-							Nodes    []CommitNode
-						} `graphql:"history(first: $itemsCount)"`
-					} `graphql:"... on Commit"`
-				}
-			} `graphql:"ref(qualifiedName: $branch)"`
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
 
-	err := p.client.Query(context.Background(), &query, variables)
-	if err != nil {
-		log.Fatal(err)
-	}
-	nodes := query.Repository.Ref.Target.Commit.History.Nodes
+	query := p.mustGetHistory(variables)
+	nodes := getCommits(query)
 
 	result := make([]model.ReleaseItem, 0)
 
-	for i := range nodes {
-		n := nodes[i]
+	for _, n := range nodes {
 		if n.Oid == fromRef {
 			break
 		}
@@ -162,35 +136,38 @@ func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 
 }
 
+func (p *GithubProvider) mustGetHistory(variables map[string]interface{}) *historyQuery {
+	var query historyQuery
+	err := p.client.Query(context.Background(), &query, variables)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &query
+}
+
+func (p *GithubProvider) mustGetDefaultBranch() string {
+	var query defaultBranchQuery
+	err := p.client.Query(context.Background(), &query, p.defaultVariables())
+	if err != nil {
+		log.Fatal(err)
+	}
+	return query.Repository.DefaultBranchRef.Name
+}
+
 //GetReleases returns the list of tags matching the release pattern
 func (p *GithubProvider) GetReleases() []model.Release {
 	log.Debug("Getting release")
-	var query struct {
-		Repository struct {
-			Refs struct {
-				Edges []tagEdge
-			} `graphql:"refs(refPrefix: \"refs/tags/\", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC})"`
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
 
-	variables := map[string]interface{}{
-		"owner": githubv4.String(p.Owner),
-		"name":  githubv4.String(p.Repo),
-	}
-
-	err := p.client.Query(context.Background(), &query, variables)
-	if err != nil {
-		log.WithError(err).Fatal("cannot get last tags")
-	}
+	query := p.mustQueryReleases()
 
 	r := make([]model.Release, 0)
-	edges := query.Repository.Refs.Edges
+	tags := query.Repository.Refs.TagNodes
 
 	// reverse order
-	for i := len(edges) - 1; i >= 0; i-- {
-		v := edges[i]
-		if p.tagFilter(v) {
-			tag := p.tagMapper(v, nil)
+	for i := len(tags) - 1; i >= 0; i-- {
+		v := tags[i]
+		if p.tagFilter(v.TagInfo) {
+			tag := p.tagMapper(v.TagInfo, nil)
 			r = append(r, tag)
 		}
 	}
@@ -198,19 +175,33 @@ func (p *GithubProvider) GetReleases() []model.Release {
 	return r
 }
 
-func (p *GithubProvider) tagFilter(v tagEdge) bool {
-	return p.GetVersionRegexp().MatchString(v.Node.Target.Tag.Message)
+func (p *GithubProvider) tagFilter(v TagNode) bool {
+	return p.GetVersionRegexp().MatchString(v.getId())
 }
 
-func (p *GithubProvider) tagMapper(tag tagEdge, changeLog []model.ReleaseItem) model.Release {
-	ref := tag.Node.Target.Tag.Target.Commit.Oid
+func (p *GithubProvider) tagMapper(tag TagNode, changeLog []model.ReleaseItem) model.Release {
 	return model.Release{
 		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
-		CurrentVersion: strings.Trim(tag.Node.Target.Tag.Message, "\n"),
-		Ref:            ref,
+		CurrentVersion: tag.getId(),
+		Ref:            tag.getCommitId(),
 		Changelog:      changeLog,
 		VersionPattern: p.MustGetPattern(),
 	}
+}
+
+func (p *GithubProvider) mustQueryReleases() *tagsQuery {
+
+	var query tagsQuery
+
+	variables := map[string]interface{}{
+		"owner": githubv4.String(p.Owner),
+		"name":  githubv4.String(p.Repo),
+	}
+	err := p.client.Query(context.Background(), &query, variables)
+	if err != nil {
+		log.WithError(err).Fatal("cannot get last tags")
+	}
+	return &query
 }
 
 //MustGetPattern tries to fetch the config filee
@@ -225,43 +216,28 @@ func (p *GithubProvider) MustGetPattern() string {
 		return p.Pattern
 	}
 
-	/* graphql */
+	query := p.mustQueryConfigFile()
 
+	if query.hasFile() {
+		p.Pattern = query.mustGetConfig().Pattern
+		log.WithField("pattern", p.Pattern).Debug("got pattern from github")
+	} else {
+		p.Pattern = model.DefaultPattern
+		log.WithField("pattern", p.Pattern).Debug("got pattern from default")
+	}
+	return p.Pattern
+}
+
+func (p *GithubProvider) mustQueryConfigFile() *configFileQuery {
+	var query configFileQuery
 	variables := p.defaultVariables()
 	variables["file"] = githubv4.String(p.mustGetBranch() + ":" + model.DefaultConfigFile)
-
-	// Query config file content without checkout
-	var query struct {
-		Repository struct {
-			Content struct {
-				Blob struct {
-					Text string
-				} `graphql:"... on Blob"`
-			} `graphql:"content:object(expression: $file)"`
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
 
 	err := p.client.Query(context.Background(), &query, variables)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	config := query.Repository.Content.Blob.Text
-	if config == "" {
-		p.Pattern = model.DefaultPattern
-		log.WithField("pattern", p.Pattern).Debug("got pattern from default")
-	} else {
-		var c model.Config
-		err := yaml.Unmarshal([]byte(config), &c)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		p.Pattern = c.Pattern
-
-		log.WithField("pattern", p.Pattern).Debug("got pattern from github")
-	}
-	return p.Pattern
+	return &query
 }
 
 func (p *GithubProvider) defaultVariables() map[string]interface{} {
@@ -285,14 +261,7 @@ func (p *GithubProvider) mustGetBranch() string {
 	}
 
 	variables := p.defaultVariables()
-	// Get default branch
-	var query struct {
-		Repository struct {
-			DefaultBranchRef struct {
-				Name string
-			}
-		} `graphql:"repository(owner: $owner, name: $name)"`
-	}
+	var query defaultBranchQuery
 
 	err := p.client.Query(context.Background(), &query, variables)
 	if err != nil {
@@ -312,6 +281,6 @@ func (p *GithubProvider) GetVersionRegexp() *regexp.Regexp {
 		"DATE", model.DateRegexp,
 	)
 
-	p.VersionRegexp = regexp.MustCompile(replacer.Replace(p.MustGetPattern()))
+	p.VersionRegexp = regexp.MustCompile("^" + replacer.Replace(p.MustGetPattern()) + "$")
 	return p.VersionRegexp
 }
