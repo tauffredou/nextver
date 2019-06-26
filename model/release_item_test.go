@@ -1,10 +1,11 @@
 package model
 
 import (
-	"github.com/stretchr/testify/assert"
 	"log"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -101,4 +102,24 @@ This do that
 	}
 	assert.Equal(t, ri, expected)
 
+}
+
+func TestReleaseItem_LevelName(t *testing.T) {
+	tests := []struct {
+		name  string
+		level byte
+		want  string
+	}{
+		{"minor", MINOR, "MINOR"},
+		{"major", MAJOR, "MAJOR"},
+		{"patch", PATCH, "PATCH"},
+		{"empty", UNDEFINED, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ri := &ReleaseItem{Level: tt.level}
+			assert.Equal(t, tt.want, ri.LevelName())
+		})
+	}
 }
