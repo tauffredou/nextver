@@ -14,25 +14,6 @@ type PageInfo struct {
 	HasNextPage bool
 }
 
-type latestReleasesQuery struct {
-	Repository struct {
-		Refs struct {
-			Nodes []struct {
-				Name   string
-				Target struct {
-					Oid           string
-					TagInfo       TagInfo `graphql:"... on Tag"`
-					CommittedDate string
-				}
-			} `graphql:"nodes"`
-		} `graphql:"refs(refPrefix: \"refs/tags/\", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC})"`
-	} `graphql:"repository(owner: $owner, name: $name)"`
-}
-
-func (q *latestReleasesQuery) getTag(index int) (*TagInfo, error) {
-	return &q.Repository.Refs.Nodes[index].Target.TagInfo, nil
-}
-
 /*
 tagsQuery retrieve the last 50 tags
 graphql query:

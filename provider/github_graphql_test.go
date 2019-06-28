@@ -17,11 +17,8 @@ func TestGithubProvider_getFirstTag(t *testing.T) {
 
 	p := &GithubProvider{client: mockGithubClient(resp)}
 
-	var q latestReleasesQuery
-	err := p.queryLatestRelease(&q)
-	assert.NoError(t, err)
-	tag, err := q.getTag(0)
-	assert.NoError(t, err)
+	q := p.mustQueryReleases()
+	tag := q.GetTags()[0]
 	assert.Equal(t, "v1.1.0", tag.getId())
 	assert.Equal(t, "a3240571ac4bbe857a0cfad3b988942838e758d1", tag.getCommitId())
 

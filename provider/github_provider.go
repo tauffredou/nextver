@@ -109,15 +109,6 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 
 }
 
-func (p *GithubProvider) queryLatestRelease(query *latestReleasesQuery) error {
-	variables := map[string]interface{}{
-		"owner": githubv4.String(p.Owner),
-		"name":  githubv4.String(p.Repo),
-	}
-
-	return p.client.Query(context.Background(), query, variables)
-}
-
 func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 
 	variables := p.defaultVariables()
