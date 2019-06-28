@@ -3,6 +3,7 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/formatter"
+	"github.com/tauffredou/nextver/model"
 	"github.com/tauffredou/nextver/provider"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
@@ -68,9 +69,8 @@ func github() *provider.GithubProvider {
 		}
 
 		githubProvider, _ = provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
-			Pattern:   *pattern,
-			Branch:    *branch,
-			BeforeRef: *release,
+			Pattern: *pattern,
+			Branch:  *branch,
 		})
 	}
 
@@ -91,10 +91,8 @@ func main() {
 
 	MustSetLoglevel(*logLevel)
 	log.WithFields(log.Fields{
-		"token": token,
-	}).Debug()
-
-	log.WithField("command", parse).Debug("Action")
+		"pattern": *pattern,
+	}).Debug(parse)
 
 	var f formatter.Formatter
 
@@ -136,7 +134,20 @@ func getReleases() formatter.Formatter {
 }
 
 func getChangelog() formatter.Formatter {
-	r := github().GetNextRelease()
-	dto := formatter.MapRelease(&r)
+	var r *model.Release
+	if *release == "" {
+		r = github().GetNextRelease()
+	} else {
+		var err error
+		r, err = github().GetRelease(*release)
+		CheckErr(err)
+	}
+	dto := formatter.MapRelease(r)
 	return formatter.NewChangelogFormatter(&dto, *color)
+}
+
+func CheckErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
