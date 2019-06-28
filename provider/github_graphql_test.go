@@ -63,6 +63,65 @@ func TestGithubProvider_GetReleases(t *testing.T) {
 	_ = p.mustQueryReleases()
 }
 
+func TestGithubProvider_getReleaseBoundary_empty(t *testing.T) {
+	resp := mockResponse(`{
+  "data": {
+    "repository": {
+      "refs": {
+        "nodes": []
+      }
+    }
+  }
+}`)
+
+	p := &GithubProvider{client: mockGithubClient(resp)}
+
+	first, last, err := p.getReleaseBoundary("v1.1.0")
+	assert.NoError(t, err)
+	assert.Equal(t, "", first)
+	assert.Equal(t, "", last)
+}
+
+func TestGithubProvider_getReleaseBoundary_one(t *testing.T) {
+	resp := mockResponse(`{
+  "data": {
+    "repository": {
+      "refs": {
+        "nodes": [
+          {
+            "name": "v1.1.0",
+            "target": {
+              "message": "v1.1.0\n",
+              "target": {
+                "oid": "a3240571ac4bbe857a0cfad3b988942838e758d1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}`)
+
+	p := &GithubProvider{client: mockGithubClient(resp)}
+
+	first, last, err := p.getReleaseBoundary("v1.1.0")
+	assert.NoError(t, err)
+	assert.Equal(t, "a3240571ac4bbe857a0cfad3b988942838e758d1", first)
+	assert.Equal(t, "", last)
+}
+
+func TestGithubProvider_getReleaseBoundary(t *testing.T) {
+	resp := mockResponseFile("../fixtures/github/releases.response.json")
+
+	p := &GithubProvider{client: mockGithubClient(resp)}
+
+	first, last, err := p.getReleaseBoundary("v1.1.0")
+	assert.NoError(t, err)
+	assert.Equal(t, "a3240571ac4bbe857a0cfad3b988942838e758d1", first)
+	assert.Equal(t, "1c23cc36d1383b82198af6ee04fe44b820b6a550", last)
+}
+
 func TestGithubProvider_MustGetPattern(t *testing.T) {
 	resp := mockResponse(`{
   "data": {

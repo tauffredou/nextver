@@ -133,3 +133,14 @@ func TestGithubProvider_GetVersionRegexp_date(t *testing.T) {
 		})
 	}
 }
+
+func TestReadHubToken(t *testing.T) {
+	r, err := ReadHubToken("../fixtures/config_hub.yaml")
+	assert.NoError(t, err)
+	assert.Equal(t, "xxxxxx", r)
+}
+
+func TestReadHubToken_FileNotExits(t *testing.T) {
+	_, err := ReadHubToken("dummy.yaml")
+	assert.Error(t, err, "")
+}

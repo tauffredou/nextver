@@ -20,67 +20,82 @@ type latestReleasesQuery struct {
 			Nodes []struct {
 				Name   string
 				Target struct {
-					Oid     string
-					TagInfo TagNode `graphql:"... on Tag"`
+					Oid           string
+					TagInfo       TagInfo `graphql:"... on Tag"`
+					CommittedDate string
 				}
 			} `graphql:"nodes"`
 		} `graphql:"refs(refPrefix: \"refs/tags/\", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC})"`
 	} `graphql:"repository(owner: $owner, name: $name)"`
 }
 
-func (q *latestReleasesQuery) getTag(index int) (*TagNode, error) {
+func (q *latestReleasesQuery) getTag(index int) (*TagInfo, error) {
 	return &q.Repository.Refs.Nodes[index].Target.TagInfo, nil
-}
-
-type TagNode struct {
-	Message string
-	Target  struct {
-		Oid string
-	}
-}
-
-func (t *TagNode) getCommitId() string {
-	return t.Target.Oid
-}
-
-func (t *TagNode) getId() string {
-	return strings.Trim(t.Message, "\n")
 }
 
 /*
 tagsQuery retrieve the last 50 tags
 graphql query:
 
-query($owner: String!, $repo: String!){
+query ($owner: String!, $repo: String!) {
   repository(owner: $owner, name: $repo) {
-   refs(refPrefix: "refs/tags/", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {
-     nodes {
-       name
-       target {
-         oid
-         ... on Tag {
-           message
-           target {
-             oid
-           }
-         }
-       }
-     }
-   }
- }
+    refs(refPrefix: "refs/tags/", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {
+      nodes {
+        name
+        target {
+          oid
+          ... on Tag {
+            oid
+            message
+            target {
+              ... on Commit {
+                oid
+                committedDate
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 */
 type tagsQuery struct {
 	Repository struct {
 		Refs struct {
-			TagNodes []struct {
-				Name    string
-				TagInfo TagNode `graphql:"target"`
-			} `graphql:"nodes"`
+			TagNodes []TagNode `graphql:"nodes"`
 		} `graphql:"refs(refPrefix: \"refs/tags/\", last: 50, orderBy: {field: TAG_COMMIT_DATE, direction: ASC})"`
 	} `graphql:"repository(owner: $owner, name: $name)"`
 }
+
+func (query *tagsQuery) GetTags() []TagNode { return query.Repository.Refs.TagNodes }
+
+type TagNode struct {
+	Name   string `graphql:"name"`
+	Target struct {
+		Oid     string  `graphql:"oid"`
+		TagInfo TagInfo `graphql:"... on Tag"`
+	} `graphql:"target"`
+}
+
+func (node *TagNode) getId() string       { return node.Target.TagInfo.getId() }
+func (node *TagNode) getCommitId() string { return node.Target.TagInfo.getCommitId() }
+func (node *TagNode) getMessage() string  { return node.Target.TagInfo.Message }
+
+type TagInfo struct {
+	Oid     string `graphql:"oid"`
+	Message string `graphql:"message"`
+	Target  struct {
+		Commit struct {
+			Oid           string `graphql:"oid"`
+			CommittedDate string `graphql:"committedDate"`
+		} `graphql:"... on Commit"`
+	} `graphql:"target"`
+}
+
+func (t *TagInfo) getCommitId() string { return t.Target.Commit.Oid }
+func (t *TagInfo) getId() string       { return strings.Trim(t.Message, "\n") }
 
 /*
 graphql query:
@@ -105,23 +120,26 @@ type defaultBranchQuery struct {
 /*
 graphql:
 
-query($branch: String!, $owner: String!, $repo: String!){
+query (
+  $release: String!,
+  $owner: String!,
+  $repo: String!,
+  $since: String!,
+) {
   repository(owner: $owner, name: $repo) {
-    ref(qualifiedName: $branch ) {
-      target {
-        ... on Commit {
-          history(first: 50) {
-            nodes{
-              message
-              oid
-              author{
-                name
-                email
-              }
-            }
-            pageInfo {
-              hasNextPage
-            }
+    object(expression: $release) {
+      ... on Commit {
+        history(first: 20,since: $since) {
+          pageInfo {
+            endCursor
+            startCursor
+            hasNextPage
+          }
+          nodes {
+            messageHeadline
+            oid
+            messageBody
+            committedDate
           }
         }
       }
@@ -129,6 +147,13 @@ query($branch: String!, $owner: String!, $repo: String!){
   }
 }
 
+variables:
+{
+  "owner": "tauffredou",
+  "repo": "test-semver",
+  "release":"v1.1.0",
+  "since": "2019-06-25T12:35:41Z"
+}
 */
 type historyQuery struct {
 	Repository struct {
@@ -138,7 +163,7 @@ type historyQuery struct {
 					History struct {
 						PageInfo PageInfo
 						Nodes    []CommitNode
-					} `graphql:"history(first: $itemsCount)"`
+					} `graphql:"history(first: $itemsCount,since: $since)"`
 				} `graphql:"... on Commit"`
 			}
 		} `graphql:"ref(qualifiedName: $branch)"`

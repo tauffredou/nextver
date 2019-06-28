@@ -6,5 +6,5 @@ import (
 
 type Provider interface {
 	GetLatestRelease() *model.Release
-	GetRelease(name string) *model.Release
+	GetRelease(name string) (*model.Release, error)
 }

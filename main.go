@@ -5,8 +5,6 @@ import (
 	"github.com/tauffredou/nextver/formatter"
 	"github.com/tauffredou/nextver/provider"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -62,7 +60,7 @@ func github() *provider.GithubProvider {
 	if githubProvider == nil {
 
 		if token == "" {
-			t, err := readHubToken(defaultHubConfig)
+			t, err := provider.ReadHubToken(defaultHubConfig)
 			if err != nil {
 				log.Fatalf("required flag '--%s'", "github-token")
 			}
@@ -77,30 +75,6 @@ func github() *provider.GithubProvider {
 	}
 
 	return githubProvider
-
-}
-
-// readHubToken read token form hub config when available
-// default location is ~/.config/hub
-func readHubToken(f string) (string, error) {
-
-	var v struct {
-		Github []struct {
-			Token string `yaml:"oauth_token"`
-		} `yaml:"github.com,flow"`
-	}
-
-	if _, err := os.Stat(f); err == nil {
-		bytes, _ := ioutil.ReadFile(f)
-		err := yaml.Unmarshal(bytes, &v)
-		if err != nil {
-			return "", err
-		}
-
-		return v.Github[0].Token, nil
-	} else {
-		return "", err
-	}
 
 }
 

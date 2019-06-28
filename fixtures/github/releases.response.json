@@ -1,0 +1,32 @@
+{
+  "data": {
+    "repository": {
+      "refs": {
+        "nodes": [
+          {
+            "name": "v1.0.1",
+            "target": {
+              "oid": "6c626a1a8543f7602584f745707757dc7dadd886",
+              "message": "v1.0.1\n",
+              "target": {
+                "oid": "1c23cc36d1383b82198af6ee04fe44b820b6a550",
+                "committedDate": "2019-06-25T12:35:41Z"
+              }
+            }
+          },
+          {
+            "name": "v1.1.0",
+            "target": {
+              "oid": "967f8868fe7181696ecdcb643dd64c5d82db67a8",
+              "message": "v1.1.0\n",
+              "target": {
+                "oid": "a3240571ac4bbe857a0cfad3b988942838e758d1",
+                "committedDate": "2019-06-25T12:39:50Z"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

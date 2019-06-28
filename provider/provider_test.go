@@ -81,7 +81,3 @@ func TestRelease_NextVersion_withEmptyChangelog(t *testing.T) {
 	assert.Regexp(t, "v1.0.0", v)
 
 }
-
-func TestNextRelease(t *testing.T) {
-
-}
