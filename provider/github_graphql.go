@@ -102,10 +102,10 @@ type defaultBranchQuery struct {
 graphql:
 
 query (
-  $release: String!,
+  $since : GitTimestamp!,
   $owner: String!,
   $repo: String!,
-  $since: String!,
+  $release: String!,
 ) {
   repository(owner: $owner, name: $repo) {
     object(expression: $release) {
@@ -139,20 +139,18 @@ variables:
 type historyQuery struct {
 	Repository struct {
 		Ref struct {
-			Target struct {
-				Commit struct {
-					History struct {
-						PageInfo PageInfo
-						Nodes    []CommitNode
-					} `graphql:"history(first: $itemsCount,since: $since)"`
-				} `graphql:"... on Commit"`
-			}
-		} `graphql:"ref(qualifiedName: $branch)"`
+			Commit struct {
+				History struct {
+					PageInfo PageInfo
+					Nodes    []CommitNode
+				} `graphql:"history(first: $itemsCount,since: $since)"`
+			} `graphql:"... on Commit"`
+		} `graphql:"object(expression: $release)"`
 	} `graphql:"repository(owner: $owner, name: $name)"`
 }
 
-func getCommits(query *historyQuery) []CommitNode {
-	return query.Repository.Ref.Target.Commit.History.Nodes
+func (query *historyQuery) getCommits() []CommitNode {
+	return query.Repository.Ref.Commit.History.Nodes
 }
 
 type CommitNode struct {

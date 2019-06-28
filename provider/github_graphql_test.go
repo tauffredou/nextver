@@ -166,7 +166,7 @@ func TestGithubProvider_historyQuery(t *testing.T) {
 	}
 
 	actual := p.mustGetHistory(nil)
-	assert.Len(t, getCommits(actual), 5)
+	assert.Len(t, actual.getCommits(), 5)
 }
 
 func mockResponseFile(f string) *http.ServeMux {
