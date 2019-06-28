@@ -93,7 +93,7 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 				Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
 				CurrentVersion: strings.Trim(tag.getMessage(), "\n"),
 				Ref:            ref,
-				Changelog:      p.getHistory(ref),
+				Changelog:      p.getHistory("", ref),
 				VersionPattern: pattern,
 			}
 		}
@@ -103,30 +103,33 @@ func (p *GithubProvider) GetLatestRelease() model.Release {
 		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
 		CurrentVersion: model.FirstVersion,
 		Ref:            "",
-		Changelog:      p.getHistory(""),
+		Changelog:      p.getHistory("", ""),
 		VersionPattern: pattern,
 	}
 
 }
 
-func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
+func (p *GithubProvider) getHistory(fromRef string, toRef string) []model.ReleaseItem {
 
 	variables := p.defaultVariables()
-	variables["branch"] = githubv4.String(p.mustGetBranch())
+	variables["release"] = githubv4.String(toRef)
 	variables["itemsCount"] = githubv4.Int(50)
 	ts, _ := time.Parse(time.RFC3339, "1900-01-01T00:00:00Z")
 	variables["since"] = githubv4.GitTimestamp{Time: ts}
 
+	fmt.Printf("%+v\n", variables)
 	query := p.mustGetHistory(variables)
-	nodes := getCommits(query)
 
 	result := make([]model.ReleaseItem, 0)
 
-	for _, n := range nodes {
-		if n.Oid == fromRef {
+	commits := query.getCommits()
+	for i := len(commits) - 1; i >= 0; i-- {
+		c := commits[i]
+		fmt.Println(c.Message)
+		if c.Oid == toRef {
 			break
 		}
-		ri := model.NewReleaseItem(n.Author.Name, n.Author.Date, n.Message)
+		ri := model.NewReleaseItem(c.Author.Name, c.Author.Date, c.Message)
 		result = append(result, ri)
 	}
 
@@ -136,6 +139,7 @@ func (p *GithubProvider) getHistory(fromRef string) []model.ReleaseItem {
 
 func (p *GithubProvider) mustGetHistory(variables map[string]interface{}) *historyQuery {
 	var query historyQuery
+
 	err := p.client.Query(context.Background(), &query, variables)
 	if err != nil {
 		log.Fatal(err)
@@ -278,13 +282,16 @@ func (p *GithubProvider) GetVersionRegexp() *regexp.Regexp {
 
 func (p *GithubProvider) GetRelease(name string) (*model.Release, error) {
 
-	_, _, _ = p.getReleaseBoundary(name)
+	from, to, _ := p.getReleaseBoundary(name)
 
+	r := model.Release{
+		CurrentVersion: name,
+		Changelog:      p.getHistory(from, to),
+	}
 	// get history from boundaries
-	//p.mustGetHistory()
 
 	//panic("implement me")
-	return nil, nil
+	return &r, nil
 }
 
 func (p *GithubProvider) getReleaseBoundary(release string) (string, string, error) {
@@ -305,7 +312,7 @@ func (p *GithubProvider) getReleaseBoundary(release string) (string, string, err
 	return first, last, nil
 }
 
-const DEFAULT_HUB_CONFIG = "~/.config/hub"
+const DEFAULT_HUB_CONFIG = "$HOME/.config/hub"
 
 // readHubToken read token form hub config when available
 // default location is ~/.config/hub
@@ -316,7 +323,7 @@ func ReadHubToken(f string) (string, error) {
 			Token string `yaml:"oauth_token"`
 		} `yaml:"github.com,flow"`
 	}
-
+	f = os.ExpandEnv(f)
 	if _, err := os.Stat(f); err == nil {
 		bytes, _ := ioutil.ReadFile(f)
 		err := yaml.Unmarshal(bytes, &v)
