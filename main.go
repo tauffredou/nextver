@@ -124,7 +124,7 @@ func main() {
 }
 
 func getNextVersion() formatter.Formatter {
-	r := github().GetLatestRelease()
+	r := github().GetNextRelease()
 	v, _ := r.NextVersion()
 	return &formatter.SimpleFormatter{Key: "next-version", Value: v}
 }
@@ -136,7 +136,7 @@ func getReleases() formatter.Formatter {
 }
 
 func getChangelog() formatter.Formatter {
-	r := github().GetLatestRelease()
+	r := github().GetNextRelease()
 	dto := formatter.MapRelease(&r)
 	return formatter.NewChangelogFormatter(&dto, *color)
 }

@@ -15,6 +15,11 @@ import (
 	"time"
 )
 
+const (
+	FirstCommit      = ""
+	DefaultHubConfig = "$HOME/.config/hub"
+)
+
 type GithubProvider struct {
 	client        *githubv4.Client
 	VersionRegexp *regexp.Regexp
@@ -77,55 +82,60 @@ func (e *ConfigurationError) Error() string {
 	return "Invalid configuration"
 }
 
-func (p *GithubProvider) GetLatestRelease() model.Release {
+func (p *GithubProvider) GetNextRelease() model.Release {
 
+	release := model.Release{
+		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
+		VersionPattern: p.MustGetPattern(),
+	}
+
+	previousTag := p.getLastReleaseTag()
+	if previousTag != nil {
+		release.CurrentVersion = previousTag.getId()
+		release.Ref = previousTag.getCommitId()
+		release.Changelog = p.getHistory("HEAD", previousTag.getCommitId())
+	} else {
+		release.CurrentVersion = model.FirstVersion
+		release.Ref = FirstCommit
+		release.Changelog = p.getHistory("HEAD", FirstCommit)
+	}
+
+	return release
+}
+
+func (p *GithubProvider) getLastReleaseTag() *TagNode {
 	tagsQuery := p.mustQueryReleases()
 	tags := tagsQuery.GetTags()
 
 	// reverse order
-	pattern := p.MustGetPattern()
 	for i := len(tags) - 1; i >= 0; i-- {
 		tag := tags[i]
 
 		if p.GetVersionRegexp().MatchString(tag.getId()) {
-			ref := tag.getCommitId()
-			return model.Release{
-				Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
-				CurrentVersion: strings.Trim(tag.getMessage(), "\n"),
-				Ref:            ref,
-				Changelog:      p.getHistory("", ref),
-				VersionPattern: pattern,
-			}
+			return &tag
 		}
 	}
 
-	return model.Release{
-		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
-		CurrentVersion: model.FirstVersion,
-		Ref:            "",
-		Changelog:      p.getHistory("", ""),
-		VersionPattern: pattern,
-	}
-
+	return nil
 }
 
 func (p *GithubProvider) getHistory(fromRef string, toRef string) []model.ReleaseItem {
 
 	variables := p.defaultVariables()
-	variables["release"] = githubv4.String(toRef)
+
+	variables["release"] = githubv4.String(fromRef)
 	variables["itemsCount"] = githubv4.Int(50)
 	ts, _ := time.Parse(time.RFC3339, "1900-01-01T00:00:00Z")
 	variables["since"] = githubv4.GitTimestamp{Time: ts}
 
-	fmt.Printf("%+v\n", variables)
+	fmt.Printf("variables: %+v\n", variables)
 	query := p.mustGetHistory(variables)
 
 	result := make([]model.ReleaseItem, 0)
 
 	commits := query.getCommits()
-	for i := len(commits) - 1; i >= 0; i-- {
-		c := commits[i]
-		fmt.Println(c.Message)
+
+	for _, c := range commits {
 		if c.Oid == toRef {
 			break
 		}
@@ -311,8 +321,6 @@ func (p *GithubProvider) getReleaseBoundary(release string) (string, string, err
 
 	return first, last, nil
 }
-
-const DEFAULT_HUB_CONFIG = "$HOME/.config/hub"
 
 // readHubToken read token form hub config when available
 // default location is ~/.config/hub
