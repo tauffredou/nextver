@@ -14,7 +14,7 @@ var (
 	}
 )
 
-func TestNewGithubProvider_emptyConfig(t *testing.T) {
+func TestGithubProvider_NewGithubProvider_emptyConfig(t *testing.T) {
 	_, err := NewGithubProvider("owner", "repo", "token", nil)
 	if assert.Error(t, err) {
 		assert.Equal(t, &ConfigurationError{}, err)
@@ -22,28 +22,28 @@ func TestNewGithubProvider_emptyConfig(t *testing.T) {
 
 }
 
-func TestNewGithubProvider_emptyOwner(t *testing.T) {
+func TestGithubProvider_NewGithubProvider_emptyOwner(t *testing.T) {
 	_, err := NewGithubProvider("", "repo", "token", testConfig)
 	if assert.Error(t, err) {
 		assert.Equal(t, &ConfigurationError{}, err)
 	}
 }
 
-func TestNewGithubProvider_emptyRepo(t *testing.T) {
+func TestGithubProvider_NewGithubProvider_emptyRepo(t *testing.T) {
 	_, err := NewGithubProvider("owner", "", "token", testConfig)
 	if assert.Error(t, err) {
 		assert.Equal(t, &ConfigurationError{}, err)
 	}
 }
 
-func TestNewGithubProvider_emptyToken(t *testing.T) {
+func TestGithubProvider_NewGithubProvider_emptyToken(t *testing.T) {
 	_, err := NewGithubProvider("owner", "repo", "", testConfig)
 	if assert.Error(t, err) {
 		assert.Equal(t, &ConfigurationError{}, err)
 	}
 }
 
-func TestNewGithubProvider_constructor(t *testing.T) {
+func TestGithubProvider_NewGithubProvider_constructor(t *testing.T) {
 	p, err := NewGithubProvider("owner", "repo", "token", testConfig)
 	assert.NoError(t, err)
 	assert.IsType(t, &githubv4.Client{}, p.client)
@@ -51,7 +51,7 @@ func TestNewGithubProvider_constructor(t *testing.T) {
 	assert.Equal(t, "repo", p.Repo)
 }
 
-func TestNewGithubProvider_obfuscateToken(t *testing.T) {
+func TestGithubProvider_NewGithubProvider_obfuscateToken(t *testing.T) {
 	tests := []struct {
 		token    string
 		expected string

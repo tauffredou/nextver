@@ -143,7 +143,7 @@ func TestGithubProvider_MustGetPattern(t *testing.T) {
 
 func TestGithubProvider_MustGetPattern_definedInProvider(t *testing.T) {
 	p := &GithubProvider{
-		Pattern: "test2",
+		pattern: "test2",
 	}
 
 	assert.Equal(t, "test2", p.MustGetPattern())

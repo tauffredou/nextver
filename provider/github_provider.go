@@ -26,7 +26,7 @@ type GithubProvider struct {
 	config        *GithubProviderConfig
 	Owner         string
 	Repo          string
-	Pattern       string
+	pattern       string
 	Branch        string
 }
 
@@ -56,33 +56,13 @@ func NewGithubProvider(owner string, repo string, token string, config *GithubPr
 	}, nil
 }
 
-func (p *GithubProvider) defaultVariables() map[string]interface{} {
-	return map[string]interface{}{
-		"owner": githubv4.String(p.Owner),
-		"name":  githubv4.String(p.Repo),
-	}
-}
-
-func obfuscateToken(token string) string {
-	strlen := len(token)
-	var sb strings.Builder
-	for pos, char := range token {
-		if pos < 2 || pos > strlen-3 {
-			sb.WriteRune(char)
-		} else {
-			sb.WriteRune('*')
-		}
-	}
-	return sb.String()
-}
-
 type ConfigurationError struct{}
 
 func (e *ConfigurationError) Error() string {
 	return "Invalid configuration"
 }
 
-func (p *GithubProvider) GetNextRelease() model.Release {
+func (p *GithubProvider) GetNextRelease() *model.Release {
 
 	release := model.Release{
 		Project:        fmt.Sprintf("%s/%s", p.Owner, p.Repo),
@@ -100,7 +80,88 @@ func (p *GithubProvider) GetNextRelease() model.Release {
 		release.Changelog = p.getHistory("HEAD", FirstCommit)
 	}
 
-	return release
+	return &release
+}
+
+//GetReleases returns the list of tags matching the release pattern
+func (p *GithubProvider) GetReleases() []model.Release {
+	log.Debug("Getting release")
+
+	query := p.mustQueryReleases()
+
+	r := make([]model.Release, 0)
+	tags := query.Repository.Refs.TagNodes
+
+	// reverse order
+	for i := len(tags) - 1; i >= 0; i-- {
+		v := tags[i]
+		if p.tagFilter(v.Target.TagInfo) {
+			tag := p.tagMapper(v.Target.TagInfo, nil)
+			r = append(r, tag)
+		}
+	}
+
+	return r
+}
+
+func (p *GithubProvider) GetRelease(name string) (*model.Release, error) {
+
+	from, to, _ := p.getReleaseBoundary(name)
+
+	r := model.Release{
+		CurrentVersion: name,
+		Changelog:      p.getHistory(from, to),
+		VersionPattern: p.MustGetPattern(),
+	}
+	return &r, nil
+}
+
+//MustGetPattern tries to fetch the config file
+func (p *GithubProvider) MustGetPattern() string {
+	log.Debug("get pattern")
+	if p.pattern != "" {
+		return p.pattern
+	}
+
+	if p.config.Pattern != "" {
+		p.pattern = p.config.Pattern
+		return p.pattern
+	}
+
+	query := p.mustQueryConfigFile()
+
+	if query.hasFile() {
+		p.pattern = query.mustGetConfig().Pattern
+		log.WithField("pattern", p.pattern).Debug("got pattern from github")
+	} else {
+		p.pattern = model.DefaultPattern
+		log.WithField("pattern", p.pattern).Debug("got pattern from default")
+	}
+	return p.pattern
+}
+
+// readHubToken read token form hub config when available
+// default location is ~/.config/hub
+func ReadHubToken(f string) (string, error) {
+
+	var v struct {
+		Github []struct {
+			Token string `yaml:"oauth_token"`
+		} `yaml:"github.com,flow"`
+	}
+	f = os.ExpandEnv(f)
+	if _, err := os.Stat(f); err == nil {
+		bytes, _ := ioutil.ReadFile(f)
+		err := yaml.Unmarshal(bytes, &v)
+		if err != nil {
+			return "", err
+		}
+
+		return v.Github[0].Token, nil
+	} else {
+		return "", err
+	}
+
 }
 
 func (p *GithubProvider) getLastReleaseTag() *TagNode {
@@ -128,7 +189,6 @@ func (p *GithubProvider) getHistory(fromRef string, toRef string) []model.Releas
 	ts, _ := time.Parse(time.RFC3339, "1900-01-01T00:00:00Z")
 	variables["since"] = githubv4.GitTimestamp{Time: ts}
 
-	fmt.Printf("variables: %+v\n", variables)
 	query := p.mustGetHistory(variables)
 
 	result := make([]model.ReleaseItem, 0)
@@ -145,6 +205,26 @@ func (p *GithubProvider) getHistory(fromRef string, toRef string) []model.Releas
 
 	return result
 
+}
+
+func (p *GithubProvider) defaultVariables() map[string]interface{} {
+	return map[string]interface{}{
+		"owner": githubv4.String(p.Owner),
+		"name":  githubv4.String(p.Repo),
+	}
+}
+
+func obfuscateToken(token string) string {
+	strlen := len(token)
+	var sb strings.Builder
+	for pos, char := range token {
+		if pos < 2 || pos > strlen-3 {
+			sb.WriteRune(char)
+		} else {
+			sb.WriteRune('*')
+		}
+	}
+	return sb.String()
 }
 
 func (p *GithubProvider) mustGetHistory(variables map[string]interface{}) *historyQuery {
@@ -164,27 +244,6 @@ func (p *GithubProvider) mustGetDefaultBranch() string {
 		log.Fatal(err)
 	}
 	return query.Repository.DefaultBranchRef.Name
-}
-
-//GetReleases returns the list of tags matching the release pattern
-func (p *GithubProvider) GetReleases() []model.Release {
-	log.Debug("Getting release")
-
-	query := p.mustQueryReleases()
-
-	r := make([]model.Release, 0)
-	tags := query.Repository.Refs.TagNodes
-
-	// reverse order
-	for i := len(tags) - 1; i >= 0; i-- {
-		v := tags[i]
-		if p.tagFilter(v.Target.TagInfo) {
-			tag := p.tagMapper(v.Target.TagInfo, nil)
-			r = append(r, tag)
-		}
-	}
-
-	return r
 }
 
 func (p *GithubProvider) tagFilter(v TagInfo) bool {
@@ -214,30 +273,6 @@ func (p *GithubProvider) mustQueryReleases() *tagsQuery {
 		log.WithError(err).Fatal("cannot get last tags")
 	}
 	return &query
-}
-
-//MustGetPattern tries to fetch the config filee
-func (p *GithubProvider) MustGetPattern() string {
-	log.Debug("get pattern")
-	if p.Pattern != "" {
-		return p.Pattern
-	}
-
-	if p.config.Pattern != "" {
-		p.Pattern = p.config.Pattern
-		return p.Pattern
-	}
-
-	query := p.mustQueryConfigFile()
-
-	if query.hasFile() {
-		p.Pattern = query.mustGetConfig().Pattern
-		log.WithField("pattern", p.Pattern).Debug("got pattern from github")
-	} else {
-		p.Pattern = model.DefaultPattern
-		log.WithField("pattern", p.Pattern).Debug("got pattern from default")
-	}
-	return p.Pattern
 }
 
 func (p *GithubProvider) mustQueryConfigFile() *configFileQuery {
@@ -290,20 +325,6 @@ func (p *GithubProvider) GetVersionRegexp() *regexp.Regexp {
 	return p.VersionRegexp
 }
 
-func (p *GithubProvider) GetRelease(name string) (*model.Release, error) {
-
-	from, to, _ := p.getReleaseBoundary(name)
-
-	r := model.Release{
-		CurrentVersion: name,
-		Changelog:      p.getHistory(from, to),
-	}
-	// get history from boundaries
-
-	//panic("implement me")
-	return &r, nil
-}
-
 func (p *GithubProvider) getReleaseBoundary(release string) (string, string, error) {
 	var first, last string
 
@@ -320,28 +341,4 @@ func (p *GithubProvider) getReleaseBoundary(release string) (string, string, err
 	}
 
 	return first, last, nil
-}
-
-// readHubToken read token form hub config when available
-// default location is ~/.config/hub
-func ReadHubToken(f string) (string, error) {
-
-	var v struct {
-		Github []struct {
-			Token string `yaml:"oauth_token"`
-		} `yaml:"github.com,flow"`
-	}
-	f = os.ExpandEnv(f)
-	if _, err := os.Stat(f); err == nil {
-		bytes, _ := ioutil.ReadFile(f)
-		err := yaml.Unmarshal(bytes, &v)
-		if err != nil {
-			return "", err
-		}
-
-		return v.Github[0].Token, nil
-	} else {
-		return "", err
-	}
-
 }

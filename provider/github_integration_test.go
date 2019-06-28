@@ -27,7 +27,7 @@ func getToken() string {
 	return token
 }
 
-func TestIntergration_GithubProvider_GetNextRelease(t *testing.T) {
+func TestIntegration_GithubProvider_GetNextRelease(t *testing.T) {
 	// using a public repository to test integration
 	p, err := NewGithubProvider("tauffredou", "test-semver", getToken(), intConfig)
 	assert.NoError(t, err)
