@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/formatter"
 	"github.com/tauffredou/nextver/model"
@@ -8,13 +9,13 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"path"
+	"regexp"
 )
 
 var (
 	token string
-	owner string
-	repo  string
 
+	repo         = kingpin.Flag("repo", "Repository").Short('r').String()
 	pattern      = kingpin.Flag("pattern", "Versionning pattern. Read from .nextver/config.yml by default").Short('p').String()
 	output       = kingpin.Flag("output", "Output format (console, json, yaml)").Short('o').Default("console").String()
 	branch       = kingpin.Flag("branch", "Target branch (default branch if empty)").Short('b').String()
@@ -51,8 +52,6 @@ func githubCommand(command *kingpin.CmdClause, name string, help string) *kingpi
 	c := command.Command(name, help)
 	c.Flag("github-token", "Github token. Can be read form hub config file").Envar("GITHUB_TOKEN").StringVar(&token)
 
-	c.Flag("github-owner", "Github owner").Required().StringVar(&owner)
-	c.Flag("github-repo", "Github repo").Required().StringVar(&repo)
 	return c
 }
 
@@ -68,7 +67,12 @@ func github() *provider.GithubProvider {
 			token = t
 		}
 
-		githubProvider, _ = provider.NewGithubProvider(owner, repo, token, &provider.GithubProviderConfig{
+		r, err := ParseRepo(*repo)
+		if err != nil {
+			log.Fatalf("Cannot parse repository")
+		}
+		githubRepo := r.(GithubRepository)
+		githubProvider, _ = provider.NewGithubProvider(githubRepo.Owner, githubRepo.Repo, token, &provider.GithubProviderConfig{
 			Pattern: *pattern,
 			Branch:  *branch,
 		})
@@ -140,14 +144,32 @@ func getChangelog() formatter.Formatter {
 	} else {
 		var err error
 		r, err = github().GetRelease(*release)
-		CheckErr(err)
+		checkErr(err)
 	}
 	dto := formatter.MapRelease(r)
 	return formatter.NewChangelogFormatter(&dto, *color)
 }
 
-func CheckErr(err error) {
+func checkErr(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+type GithubRepository struct {
+	Owner string
+	Repo  string
+}
+
+type InvalidRepositoryError struct{ repo string }
+
+func (e InvalidRepositoryError) Error() string { return fmt.Sprintf("Invalid repository %s", e.repo) }
+
+func ParseRepo(repo string) (interface{}, error) {
+	re := regexp.MustCompile(`^(https://|git@)?github.com[:/]([a-zA-Z0-9-]+)/([a-zA-Z0-9-]+)(\.git)?$`)
+	if re.MatchString(repo) {
+		v := re.FindStringSubmatch(repo)
+		return GithubRepository{Owner: v[2], Repo: v[3]}, nil
+	}
+	return nil, &InvalidRepositoryError{repo: repo}
 }
