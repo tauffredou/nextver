@@ -316,12 +316,7 @@ func (p *GithubProvider) GetVersionRegexp() *regexp.Regexp {
 		return p.VersionRegexp
 	}
 
-	replacer := strings.NewReplacer(
-		"SEMVER", model.SemverRegex,
-		"DATE", model.DateRegexp,
-	)
-
-	p.VersionRegexp = regexp.MustCompile("^" + replacer.Replace(p.MustGetPattern()) + "$")
+	GetVersionRegexp(p.MustGetPattern())
 	return p.VersionRegexp
 }
 
