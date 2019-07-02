@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/formatter"
 	"github.com/tauffredou/nextver/model"
@@ -9,7 +8,6 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"path"
-	"regexp"
 )
 
 var (
@@ -67,11 +65,11 @@ func github() *provider.GithubProvider {
 			token = t
 		}
 
-		r, err := ParseRepo(*repo)
+		r, err := provider.ParseRepo(*repo)
 		if err != nil {
 			log.Fatalf("Cannot parse repository")
 		}
-		githubRepo := r.(GithubRepository)
+		githubRepo := r.(provider.GithubRepository)
 		githubProvider, _ = provider.NewGithubProvider(githubRepo.Owner, githubRepo.Repo, token, &provider.GithubProviderConfig{
 			Pattern: *pattern,
 			Branch:  *branch,
@@ -154,35 +152,4 @@ func checkErr(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-type GithubRepository struct {
-	Owner string
-	Repo  string
-}
-
-type GitRepository struct {
-	path string
-}
-
-type InvalidRepositoryError struct{ repo string }
-
-func (e InvalidRepositoryError) Error() string { return fmt.Sprintf("Invalid repository %s", e.repo) }
-
-func ParseRepo(repo string) (interface{}, error) {
-	if repo == "" {
-		return nil, &InvalidRepositoryError{repo: repo}
-	}
-
-	re := regexp.MustCompile(`^(https://|git@)?github.com[:/]([a-zA-Z0-9-]+)/([a-zA-Z0-9-]+)(\.git)?$`)
-	if re.MatchString(repo) {
-		v := re.FindStringSubmatch(repo)
-		return GithubRepository{Owner: v[2], Repo: v[3]}, nil
-	}
-
-	if _, err := os.Stat(repo); os.IsNotExist(err) {
-		return nil, &InvalidRepositoryError{repo: repo}
-	}
-
-	return GitRepository{path: repo}, nil
 }
