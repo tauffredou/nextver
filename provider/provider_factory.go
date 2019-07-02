@@ -16,13 +16,19 @@ func (f *ProviderFactory) CreateProvider(repo string) (Provider, error) {
 	if err != nil {
 		return nil, err
 	}
-	gr := r.(GithubRepository)
-	provider, err := NewGithubProvider(gr.Owner, gr.Repo, f.Token, &GithubProviderConfig{Pattern: f.Pattern})
-	if err != nil {
-		return nil, err
+	switch v := r.(type) {
+	case GithubRepository:
+		provider, err := NewGithubProvider(v.Owner, v.Repo, f.Token, &GithubProviderConfig{Pattern: f.Pattern})
+		if err != nil {
+			return nil, err
+		}
+		return provider, nil
+	case GitRepository:
+		return NewGitProvider(v.path, f.Pattern), nil
+	default:
+		return nil, fmt.Errorf("unhandled repo type %+v", v)
 	}
 
-	return provider, nil
 }
 
 func ParseRepo(repo string) (interface{}, error) {

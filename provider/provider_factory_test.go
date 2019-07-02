@@ -7,7 +7,8 @@ import (
 
 func TestCreateProvider_github(t *testing.T) {
 	f := ProviderFactory{
-		Token: "aToken",
+		Token:   "aToken",
+		Pattern: "vSEMVER",
 	}
 
 	p, err := f.CreateProvider("github.com/test/test-rep")
@@ -18,6 +19,20 @@ func TestCreateProvider_github(t *testing.T) {
 	gp := p.(*GithubProvider)
 	assert.Equal(t, "test", gp.Owner)
 	assert.Equal(t, "test-rep", gp.Repo)
+}
+
+func TestCreateProvider_git(t *testing.T) {
+	f := ProviderFactory{
+		Pattern: "vSEMVER",
+	}
+
+	p, err := f.CreateProvider(".")
+
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+	assert.IsType(t, &GitProvider{}, p)
+	gp := p.(*GitProvider)
+	assert.Equal(t, ".", gp.path)
 }
 
 func TestRepoParam(t *testing.T) {
