@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"fmt"
 	"github.com/tauffredou/nextver/model"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -25,7 +24,6 @@ func (p *GitProvider) GetReleases() []model.Release {
 	r := make([]model.Release, 0)
 	tags, _ := repo.Tags()
 	_ = tags.ForEach(func(reference *plumbing.Reference) error {
-		fmt.Println(reference)
 		if p.tagFilter(reference) {
 			tag := p.tagMapper(reference)
 			r = append([]model.Release{tag}, r...)

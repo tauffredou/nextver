@@ -21,7 +21,6 @@ func cleanRepo(path string) {
 }
 
 func cloneRepo(url string, directory string) {
-	fmt.Println(directory)
 	var err error
 
 	_, err = git.PlainClone(directory, false, &git.CloneOptions{
