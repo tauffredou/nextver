@@ -11,9 +11,13 @@ func TestCreateProvider_github(t *testing.T) {
 	}
 
 	p, err := f.CreateProvider("github.com/test/test-rep")
+
 	assert.NoError(t, err)
 	assert.NotNil(t, p)
-	assert.Equal(t, &GithubProvider{}, p)
+	assert.IsType(t, &GithubProvider{}, p)
+	gp := p.(*GithubProvider)
+	assert.Equal(t, "test", gp.Owner)
+	assert.Equal(t, "test-rep", gp.Repo)
 }
 
 func TestRepoParam(t *testing.T) {
