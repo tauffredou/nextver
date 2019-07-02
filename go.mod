@@ -9,7 +9,7 @@ require (
 	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	github.com/shurcooL/githubv4 v0.0.0-20190119021625-d9689b595017
-  github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
+	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/sirupsen/logrus v1.4.0
 	github.com/stretchr/testify v1.3.0
 	github.com/willf/pad v0.0.0-20190207183901-eccfe5d84172
