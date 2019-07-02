@@ -316,7 +316,7 @@ func (p *GithubProvider) GetVersionRegexp() *regexp.Regexp {
 		return p.VersionRegexp
 	}
 
-	GetVersionRegexp(p.MustGetPattern())
+	p.VersionRegexp = GetVersionRegexp(p.MustGetPattern())
 	return p.VersionRegexp
 }
 
