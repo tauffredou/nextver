@@ -161,15 +161,28 @@ type GithubRepository struct {
 	Repo  string
 }
 
+type GitRepository struct {
+	path string
+}
+
 type InvalidRepositoryError struct{ repo string }
 
 func (e InvalidRepositoryError) Error() string { return fmt.Sprintf("Invalid repository %s", e.repo) }
 
 func ParseRepo(repo string) (interface{}, error) {
+	if repo == "" {
+		return nil, &InvalidRepositoryError{repo: repo}
+	}
+
 	re := regexp.MustCompile(`^(https://|git@)?github.com[:/]([a-zA-Z0-9-]+)/([a-zA-Z0-9-]+)(\.git)?$`)
 	if re.MatchString(repo) {
 		v := re.FindStringSubmatch(repo)
 		return GithubRepository{Owner: v[2], Repo: v[3]}, nil
 	}
-	return nil, &InvalidRepositoryError{repo: repo}
+
+	if _, err := os.Stat(repo); os.IsNotExist(err) {
+		return nil, &InvalidRepositoryError{repo: repo}
+	}
+
+	return GitRepository{path: repo}, nil
 }

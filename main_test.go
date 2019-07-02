@@ -13,7 +13,11 @@ func TestRepoParam(t *testing.T) {
 		wantErr error
 	}{
 		{name: "empty", repo: "", wantErr: &InvalidRepositoryError{repo: ""}},
-		{name: "whatever", repo: "whatever", wantErr: &InvalidRepositoryError{repo: "whatever"}},
+		{name: "non existing dir", repo: "non/existing/dir", wantErr: &InvalidRepositoryError{repo: "non/existing/dir"}},
+
+		{name: "current dir", repo: ".", want: GitRepository{path: "."}},
+		{name: "current dir", repo: "doc/", want: GitRepository{path: "doc/"}},
+
 		{name: "github short", repo: "github.com/test/test-rep", want: GithubRepository{Owner: "test", Repo: "test-rep"}},
 		{name: "github https", repo: "https://github.com/test/test-rep", want: GithubRepository{Owner: "test", Repo: "test-rep"}},
 		{name: "github https .git", repo: "https://github.com/test/test-rep.git", want: GithubRepository{Owner: "test", Repo: "test-rep"}},
