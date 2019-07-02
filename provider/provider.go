@@ -2,9 +2,20 @@ package provider
 
 import (
 	"github.com/tauffredou/nextver/model"
+	"regexp"
+	"strings"
 )
 
 type Provider interface {
-	GetLatestRelease() *model.Release
+	GetReleases() []model.Release
+	GetNextRelease() *model.Release
 	GetRelease(name string) (*model.Release, error)
+}
+
+func GetVersionRegexp(pattern string) *regexp.Regexp {
+	replacer := strings.NewReplacer(
+		"SEMVER", model.SemverRegex,
+		"DATE", model.DateRegexp,
+	)
+	return regexp.MustCompile("^" + replacer.Replace(pattern) + "$")
 }
