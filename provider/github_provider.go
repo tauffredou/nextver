@@ -84,7 +84,7 @@ func (p *GithubProvider) GetNextRelease() *model.Release {
 }
 
 //GetReleases returns the list of tags matching the release pattern
-func (p *GithubProvider) GetReleases() []model.Release {
+func (p *GithubProvider) GetReleases() ([]model.Release, error) {
 	log.Debug("Getting release")
 
 	query := p.mustQueryReleases()
@@ -101,7 +101,7 @@ func (p *GithubProvider) GetReleases() []model.Release {
 		}
 	}
 
-	return r
+	return r, nil
 }
 
 func (p *GithubProvider) GetRelease(name string) (*model.Release, error) {

@@ -130,7 +130,10 @@ func getNextVersion() formatter.Formatter {
 }
 
 func getReleases() formatter.Formatter {
-	r := github().GetReleases()
+	r, err := github().GetReleases()
+	if err != nil {
+		log.Fatal(err)
+	}
 	m := formatter.MapReleases(r)
 	return formatter.NewReleasesFormatter(m)
 }

@@ -14,23 +14,31 @@ type GitProvider struct {
 }
 
 func NewGitProvider(path string, versionPattern string) *GitProvider {
-	provider := GitProvider{path: path, versionPattern: versionPattern}
-	provider.versionRegexp = GetVersionRegexp(versionPattern)
-	return &provider
+	return &GitProvider{
+		path:           path,
+		versionPattern: versionPattern,
+		versionRegexp:  GetVersionRegexp(versionPattern),
+	}
 }
 
-func (p *GitProvider) GetReleases() []model.Release {
-	repo, _ := git.PlainOpen(p.path)
+func (p *GitProvider) GetReleases() ([]model.Release, error) {
+	repo, err := git.PlainOpen(p.path)
+	if err != nil {
+		return nil, err
+	}
 	r := make([]model.Release, 0)
-	tags, _ := repo.Tags()
-	_ = tags.ForEach(func(reference *plumbing.Reference) error {
+	t, err := repo.Tags()
+	if err != nil {
+		return nil, err
+	}
+	_ = t.ForEach(func(reference *plumbing.Reference) error {
 		if p.tagFilter(reference) {
 			tag := p.tagMapper(reference)
 			r = append([]model.Release{tag}, r...)
 		}
 		return nil
 	})
-	return r
+	return r, nil
 }
 
 func (*GitProvider) GetNextRelease() *model.Release {
@@ -39,7 +47,7 @@ func (*GitProvider) GetNextRelease() *model.Release {
 }
 
 func (*GitProvider) GetRelease(name string) (*model.Release, error) {
-	panic("implement me")
+	return nil, nil
 }
 
 func (p *GitProvider) tagFilter(reference *plumbing.Reference) bool {
@@ -51,4 +59,21 @@ func (p *GitProvider) tagMapper(reference *plumbing.Reference) model.Release {
 	return model.Release{
 		CurrentVersion: reference.Name().Short(),
 	}
+}
+
+func (p *GitProvider) getPreviousRelease(release string) *model.Release {
+	releases, _ := p.GetReleases()
+	l := len(releases)
+	for i := 0; i < l; i++ {
+		it := releases[i]
+		if it.CurrentVersion == release {
+			if i < l-1 {
+				return &releases[i+1]
+			} else {
+				return nil
+			}
+		}
+	}
+
+	return nil
 }

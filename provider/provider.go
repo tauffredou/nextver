@@ -7,7 +7,7 @@ import (
 )
 
 type Provider interface {
-	GetReleases() []model.Release
+	GetReleases() ([]model.Release, error)
 	GetNextRelease() *model.Release
 	GetRelease(name string) (*model.Release, error)
 }
