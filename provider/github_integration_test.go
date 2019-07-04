@@ -4,6 +4,7 @@ package provider
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 )
@@ -51,4 +52,16 @@ func TestIntegration_GithubProvider_GetRelease(t *testing.T) {
 	assert.Len(t, r.Changelog, 2)
 	assert.Equal(t, "feature 3", r.Changelog[0].Title)
 	assert.Equal(t, "feature 2", r.Changelog[1].Title)
+}
+
+func TestIntegration_GithubProvider_GetReleases(t *testing.T) {
+	// using a public repository to test integration
+	p, err := NewGithubProvider("tauffredou", "test-semver", getToken(), intConfig)
+	assert.NoError(t, err)
+
+	actual, err := p.GetReleases()
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(actual))
+	assert.Equal(t, "v1.1.0", actual[0].CurrentVersion)
+	assert.Equal(t, "v1.0.1", actual[1].CurrentVersion)
 }
