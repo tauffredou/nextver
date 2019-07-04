@@ -26,18 +26,24 @@ func (p *GitProvider) GetReleases() ([]model.Release, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	r := make([]model.Release, 0)
 	t, err := repo.Tags()
 	if err != nil {
 		return nil, err
 	}
-	_ = t.ForEach(func(reference *plumbing.Reference) error {
+
+	err = t.ForEach(func(reference *plumbing.Reference) error {
 		if p.tagFilter(reference) {
 			tag := p.tagMapper(reference)
-			r = append([]model.Release{tag}, r...)
+			r = append([]model.Release{tag}, r...) //preprend to reverse order
 		}
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	return r, nil
 }
 
