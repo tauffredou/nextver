@@ -80,12 +80,26 @@ func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
 	}{
 		{"v1.1.0", &model.Release{CurrentVersion: "v1.0.1"}},
 		{"v1.0.1", nil},
+		{"bad", nil},
+		{"", &model.Release{CurrentVersion: "v1.1.0"}},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.want, p.getPreviousRelease(tt.name))
 		})
 	}
+}
+func (suite *ProviderSuite) TestGitProvider_GetReleases_badPath() {
+	p := NewGitProvider("badPath", "vSEMVER")
+	_, err := p.GetReleases()
+	assert.Error(suite.T(), err)
+}
+
+func (suite *ProviderSuite) TestGitProvider_GetNextRelease() {
+	p := suite.provider
+
+	actual := p.GetNextRelease()
+	assert.Equal(suite.T(), "v1.2.0", actual.MustNextVersion())
 }
 
 /* other test */
