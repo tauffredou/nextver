@@ -4,6 +4,7 @@ package provider
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 )
@@ -58,7 +59,8 @@ func TestIntegration_GithubProvider_GetReleases(t *testing.T) {
 	p, err := NewGithubProvider("tauffredou", "test-semver", getToken(), intConfig)
 	assert.NoError(t, err)
 
-	actual := p.GetReleases()
+	actual, err := p.GetReleases()
+	require.NoError(t, err)
 	assert.Equal(t, 2, len(actual))
 	assert.Equal(t, "v1.1.0", actual[0].CurrentVersion)
 	assert.Equal(t, "v1.0.1", actual[1].CurrentVersion)
