@@ -11,9 +11,17 @@ import (
 const DateFormat = "2006-01-02-150405"
 
 func SemverCalculator(r *Release) (string, error) {
-	mmp, err := ReadSemver(r.CurrentVersion)
-	if err != nil {
-		return "", fmt.Errorf("cannot calculate next version. version: %s", r.CurrentVersion)
+	var (
+		mmp []int64
+		err error
+	)
+	if r.CurrentVersion == "" {
+		mmp = []int64{0, 0, 0}
+	} else {
+		mmp, err = ReadSemver(r.CurrentVersion)
+		if err != nil {
+			return "", fmt.Errorf("cannot calculate next version. version: %s", r.CurrentVersion)
+		}
 	}
 
 	var mask byte = 0

@@ -28,6 +28,19 @@ func MustParse(layout, value string) time.Time {
 	return t
 }
 
+func TestRelease_NextVersion_withSemver_empty(t *testing.T) {
+	r := model.Release{
+		Changelog:      changeLog,
+		CurrentVersion: "",
+		VersionPattern: "vSEMVER",
+	}
+
+	v, _ := r.NextVersion()
+
+	assert.Equal(t, "v0.1.0", v)
+
+}
+
 func TestRelease_NextVersion_withSemver_withPrefix(t *testing.T) {
 	r := model.Release{
 		Changelog:      changeLog,
