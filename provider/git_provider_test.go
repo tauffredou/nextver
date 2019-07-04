@@ -68,7 +68,7 @@ func (suite *ProviderSuite) TestGitProvider_GetRelease_empty() {
 	p := suite.provider
 	actual, err := p.GetRelease("")
 	require.NoError(suite.T(), err)
-	require.Nil(suite.T(), actual)
+	require.NotNil(suite.T(), actual)
 }
 
 func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
@@ -96,10 +96,32 @@ func (suite *ProviderSuite) TestGitProvider_GetReleases_badPath() {
 }
 
 func (suite *ProviderSuite) TestGitProvider_GetNextRelease() {
+	actual := suite.provider.GetNextRelease()
+
+	require.NotNil(suite.T(), actual)
+	assert.Equal(suite.T(), "v1.2.0", actual.MustNextVersion())
+}
+
+func (suite *ProviderSuite) TestProvider_GetRelease_withBoundaries() {
+	p := suite.provider
+	r, err := p.GetRelease("v1.1.0")
+
+	assert.NoError(suite.T(), err)
+	assert.NotNil(suite.T(), r)
+	assert.Equal(suite.T(), "v1.1.0", r.CurrentVersion)
+	require.Len(suite.T(), r.Changelog, 2)
+	assert.Equal(suite.T(), "feature 3", r.Changelog[0].Title)
+	assert.Equal(suite.T(), "feature 2", r.Changelog[1].Title)
+}
+
+func (suite *ProviderSuite) TestProvider_GetReleases() {
 	p := suite.provider
 
-	actual := p.GetNextRelease()
-	assert.Equal(suite.T(), "v1.2.0", actual.MustNextVersion())
+	actual, err := p.GetReleases()
+	require.NoError(suite.T(), err)
+	assert.Equal(suite.T(), 2, len(actual))
+	assert.Equal(suite.T(), "v1.1.0", actual[0].CurrentVersion)
+	assert.Equal(suite.T(), "v1.0.1", actual[1].CurrentVersion)
 }
 
 /* other test */

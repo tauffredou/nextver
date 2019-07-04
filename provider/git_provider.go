@@ -48,11 +48,74 @@ func (p *GitProvider) GetReleases() ([]model.Release, error) {
 }
 
 func (p *GitProvider) GetNextRelease() *model.Release {
-	return nil
+	tag := p.getPreviousRelease("").CurrentVersion
+	release, _ := p.GetRelease(tag)
+	return release
 }
 
-func (*GitProvider) GetRelease(name string) (*model.Release, error) {
-	return nil, nil
+func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
+	var (
+		err error
+		ref *plumbing.Reference
+	)
+
+	release := model.Release{
+		CurrentVersion: name,
+		Changelog:      make([]model.ReleaseItem, 0),
+		VersionPattern: p.versionPattern,
+	}
+
+	repo, err := git.PlainOpen(p.path)
+	if err != nil {
+		return nil, err
+	}
+
+	if name != "" {
+		ref, _ = repo.Tag(name)
+	}
+
+	previousRelease := p.getPreviousRelease(name)
+	prev, _ := repo.Tag(previousRelease.CurrentVersion)
+	prevObject, err := repo.TagObject(prev.Hash())
+	if err != nil {
+		return nil, err
+	}
+
+	var options git.LogOptions
+	if ref != nil {
+		refObject, err := repo.TagObject(ref.Hash())
+		if err != nil {
+			return nil, err
+		}
+
+		options = git.LogOptions{
+			From: refObject.Target,
+		}
+	} else {
+		options = git.LogOptions{
+			All: true,
+		}
+	}
+
+	it, err := repo.Log(&options)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		commit, err := it.Next()
+		if err != nil {
+			break
+		}
+
+		if commit.Hash == prevObject.Target {
+			break
+		}
+		item := model.NewReleaseItem(commit.Author.Name, commit.Author.When, commit.Message)
+		release.Changelog = append(release.Changelog, item)
+	}
+	it.Close()
+	return &release, nil
 }
 
 func (p *GitProvider) tagFilter(reference *plumbing.Reference) bool {
