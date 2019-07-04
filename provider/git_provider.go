@@ -1,9 +1,15 @@
 package provider
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/model"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -14,11 +20,18 @@ type GitProvider struct {
 }
 
 func NewGitProvider(path string, versionPattern string) *GitProvider {
-	return &GitProvider{
+	provider := GitProvider{
 		path:           path,
 		versionPattern: versionPattern,
-		versionRegexp:  GetVersionRegexp(versionPattern),
 	}
+	return &provider
+}
+
+func (p *GitProvider) VersionRegexp() *regexp.Regexp {
+	if p.versionRegexp == nil {
+		p.versionRegexp = GetVersionRegexp(p.versionPattern)
+	}
+	return p.versionRegexp
 }
 
 func (p *GitProvider) GetReleases() ([]model.Release, error) {
@@ -62,7 +75,7 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 	release := model.Release{
 		CurrentVersion: name,
 		Changelog:      make([]model.ReleaseItem, 0),
-		VersionPattern: p.versionPattern,
+		VersionPattern: p.VersionPattern(),
 	}
 
 	repo, err := git.PlainOpen(p.path)
@@ -75,10 +88,13 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 	}
 
 	previousRelease := p.getPreviousRelease(name)
-	prev, _ := repo.Tag(previousRelease.CurrentVersion)
-	prevObject, err := repo.TagObject(prev.Hash())
-	if err != nil {
-		return nil, err
+	var prevObject *object.Tag
+	if previousRelease != nil {
+		prev, _ := repo.Tag(previousRelease.CurrentVersion)
+		prevObject, err = repo.TagObject(prev.Hash())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var options git.LogOptions
@@ -102,25 +118,31 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 		return nil, err
 	}
 
+	release.Changelog = mapChangelog(it, prevObject)
+	it.Close()
+	return &release, nil
+}
+
+func mapChangelog(it object.CommitIter, prevObject *object.Tag) []model.ReleaseItem {
+	changelog := make([]model.ReleaseItem, 0)
 	for {
 		commit, err := it.Next()
 		if err != nil {
 			break
 		}
 
-		if commit.Hash == prevObject.Target {
+		if prevObject != nil && commit.Hash == prevObject.Target {
 			break
 		}
 		item := model.NewReleaseItem(commit.Author.Name, commit.Author.When, commit.Message)
-		release.Changelog = append(release.Changelog, item)
+		changelog = append(changelog, item)
 	}
-	it.Close()
-	return &release, nil
+	return changelog
 }
 
 func (p *GitProvider) tagFilter(reference *plumbing.Reference) bool {
 	s := reference.Name().Short()
-	return p.versionRegexp.MatchString(s)
+	return p.VersionRegexp().MatchString(s)
 }
 
 func (p *GitProvider) tagMapper(reference *plumbing.Reference) model.Release {
@@ -133,15 +155,49 @@ func (p *GitProvider) getPreviousRelease(release string) *model.Release {
 	releases, _ := p.GetReleases()
 	for i := 0; i < len(releases)-1; i++ {
 		it := &releases[i]
+		it.VersionPattern = p.VersionPattern()
 
 		if release == "" {
 			return it
 		}
 
 		if it.CurrentVersion == release {
-			return &releases[i+1]
+			r := releases[i+1]
+			r.VersionPattern = p.VersionPattern()
+			return &r
 		}
 	}
 
 	return nil
+}
+
+//VersionPattern tries to fetch the config file
+func (p *GitProvider) VersionPattern() string {
+	if p.versionPattern != "" {
+		return p.versionPattern
+	}
+
+	c, err := p.readConfigFile()
+	if err == nil && c.Pattern != "" {
+		return c.Pattern
+	}
+
+	return model.DefaultPattern
+}
+
+func (p *GitProvider) readConfigFile() (*model.Config, error) {
+	f := filepath.Join(p.path, model.DefaultConfigFile)
+
+	if _, err := os.Stat(f); os.IsNotExist(err) {
+		log.WithField("filename", f).Debug("Cannot read configuration")
+		return nil, err
+	}
+	bytes, err := ioutil.ReadFile(f)
+
+	var c model.Config
+	err = yaml.Unmarshal(bytes, &c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &c, nil
 }

@@ -64,13 +64,6 @@ func (suite *ProviderSuite) TestGitProvider_GetReleases() {
 	assert.Equal(suite.T(), "v1.0.1", actual[1].CurrentVersion)
 }
 
-func (suite *ProviderSuite) TestGitProvider_GetRelease_empty() {
-	p := suite.provider
-	actual, err := p.GetRelease("")
-	require.NoError(suite.T(), err)
-	require.NotNil(suite.T(), actual)
-}
-
 func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
 	p := NewGitProvider(suite.gitPath, "vSEMVER")
 
@@ -78,10 +71,10 @@ func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
 		name string
 		want *model.Release
 	}{
-		{"v1.1.0", &model.Release{CurrentVersion: "v1.0.1"}},
+		{"v1.1.0", &model.Release{CurrentVersion: "v1.0.1", VersionPattern: "vSEMVER"}},
 		{"v1.0.1", nil},
 		{"bad", nil},
-		{"", &model.Release{CurrentVersion: "v1.1.0"}},
+		{"", &model.Release{CurrentVersion: "v1.1.0", VersionPattern: "vSEMVER"}},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.name, func(t *testing.T) {
@@ -100,6 +93,25 @@ func (suite *ProviderSuite) TestGitProvider_GetNextRelease() {
 
 	require.NotNil(suite.T(), actual)
 	assert.Equal(suite.T(), "v1.2.0", actual.MustNextVersion())
+}
+
+func (suite *ProviderSuite) TestGitProvider_GetRelease_empty() {
+	p := suite.provider
+	actual, err := p.GetRelease("")
+	require.NoError(suite.T(), err)
+	require.NotNil(suite.T(), actual)
+}
+
+func (suite *ProviderSuite) TestGitProvider_GetRelease_last() {
+	p := suite.provider
+	actual, err := p.GetRelease("v1.0.1")
+	require.NoError(suite.T(), err)
+	require.NotNil(suite.T(), actual)
+
+	assert.Equal(suite.T(), "v1.0.1", actual.CurrentVersion)
+	require.Len(suite.T(), actual.Changelog, 5)
+	assert.Equal(suite.T(), "change f1", actual.Changelog[0].Title)
+	assert.Equal(suite.T(), "Initial commit", actual.Changelog[4].Title)
 }
 
 func (suite *ProviderSuite) TestProvider_GetRelease_withBoundaries() {
@@ -144,4 +156,22 @@ func TestGitProvider_tagFilter(t *testing.T) {
 			assert.Equal(t, p.tagFilter(reference), tt.want)
 		})
 	}
+}
+
+func TestGitProvider_mustGetPattern_default(t *testing.T) {
+	p := GitProvider{}
+	actual := p.VersionPattern()
+	assert.Equal(t, model.DefaultPattern, actual)
+}
+
+func TestGitProvider_mustGetPattern_fromFile(t *testing.T) {
+	p := GitProvider{path: "../fixtures/local"}
+	actual := p.VersionPattern()
+	assert.Equal(t, "testSEMVER", actual)
+}
+
+func TestGitProvider_mustGetPattern_override(t *testing.T) {
+	p := GitProvider{versionPattern: "overridePattern"}
+	actual := p.VersionPattern()
+	assert.Equal(t, "overridePattern", actual)
 }
