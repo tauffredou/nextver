@@ -175,3 +175,47 @@ func TestGitProvider_mustGetPattern_override(t *testing.T) {
 	actual := p.VersionPattern()
 	assert.Equal(t, "overridePattern", actual)
 }
+
+func TestGitProvider_GetVersionRegexp_semver(t *testing.T) {
+	tests := []struct {
+		pattern  string
+		match    string
+		expected bool
+	}{
+		{"SEMVER", "bad-v1", false},
+		{"SEMVER", "v1", true},
+		{"SEMVER", "1", true},
+		{"SEMVER", "1.0", true},
+		{"SEMVER", "1.0.1", true},
+		{"SEMVER", "1.0.1.0", false},
+		{"SEMVER", "1.0.1-bad", false},
+		{"SEMVER", "v1", true},
+		{"SEMVER", "prefix-1.0", false},
+		{"prefix-SEMVER", "prefix-1.0", true},
+		{"prefix-SEMVER-suffix", "prefix-1.0-suffix", true},
+	}
+	for _, test := range tests {
+		t.Run(test.pattern+"_"+test.match, func(t *testing.T) {
+			p := GitProvider{versionPattern: test.pattern}
+			assert.Equal(t, test.expected, p.VersionRegexp().MatchString(test.match))
+		})
+	}
+}
+
+func TestGitProvider_GetVersionRegexp_date(t *testing.T) {
+	tests := []struct {
+		pattern  string
+		match    string
+		expected bool
+	}{
+		{"DATE", "2019-06-12-095000", true},
+		{"prefix-DATE", "prefix-2019-06-12-095000", true},
+		{"DATE-suffix", "2019-06-12-095000-suffix", true},
+	}
+	for _, test := range tests {
+		t.Run(test.pattern+"_"+test.match, func(t *testing.T) {
+			p := GitProvider{versionPattern: test.pattern}
+			assert.Equal(t, test.expected, p.VersionRegexp().MatchString(test.match))
+		})
+	}
+}

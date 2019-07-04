@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/model"
 	"gopkg.in/src-d/go-git.v4"
@@ -11,12 +12,17 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 )
 
 type GitProvider struct {
 	path           string
 	versionPattern string
 	versionRegexp  *regexp.Regexp
+}
+
+func (p *GitProvider) String() string {
+	return fmt.Sprintf("path:%s, versionPattern:%s, versionRegexp:%s", p.path, p.VersionPattern(), p.VersionRegexp().String())
 }
 
 func NewGitProvider(path string, versionPattern string) *GitProvider {
@@ -29,7 +35,7 @@ func NewGitProvider(path string, versionPattern string) *GitProvider {
 
 func (p *GitProvider) VersionRegexp() *regexp.Regexp {
 	if p.versionRegexp == nil {
-		p.versionRegexp = GetVersionRegexp(p.versionPattern)
+		p.versionRegexp = GetVersionRegexp(p.VersionPattern())
 	}
 	return p.versionRegexp
 }
@@ -49,14 +55,16 @@ func (p *GitProvider) GetReleases() ([]model.Release, error) {
 	err = t.ForEach(func(reference *plumbing.Reference) error {
 		if p.tagFilter(reference) {
 			tag := p.tagMapper(reference)
-			r = append([]model.Release{tag}, r...) //preprend to reverse order
+			r = append(r, tag)
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-
+	sort.SliceStable(r, func(i, j int) bool {
+		return r[i].CurrentVersion > r[j].CurrentVersion
+	})
 	return r, nil
 }
 
@@ -109,7 +117,7 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 		}
 	} else {
 		options = git.LogOptions{
-			All: true,
+			Order: git.LogOrderCommitterTime,
 		}
 	}
 
@@ -148,6 +156,7 @@ func (p *GitProvider) tagFilter(reference *plumbing.Reference) bool {
 func (p *GitProvider) tagMapper(reference *plumbing.Reference) model.Release {
 	return model.Release{
 		CurrentVersion: reference.Name().Short(),
+		VersionPattern: p.VersionPattern(),
 	}
 }
 
@@ -177,7 +186,7 @@ func (p *GitProvider) VersionPattern() string {
 		return p.versionPattern
 	}
 
-	c, err := p.readConfigFile()
+	c, err := p.ReadConfigFile()
 	if err == nil && c.Pattern != "" {
 		return c.Pattern
 	}
@@ -185,7 +194,8 @@ func (p *GitProvider) VersionPattern() string {
 	return model.DefaultPattern
 }
 
-func (p *GitProvider) readConfigFile() (*model.Config, error) {
+func (p *GitProvider) ReadConfigFile() (*model.Config, error) {
+	//log.Debug("provider.GitProvider::ReadConfigFile")
 	f := filepath.Join(p.path, model.DefaultConfigFile)
 
 	if _, err := os.Stat(f); os.IsNotExist(err) {
@@ -193,7 +203,6 @@ func (p *GitProvider) readConfigFile() (*model.Config, error) {
 		return nil, err
 	}
 	bytes, err := ioutil.ReadFile(f)
-
 	var c model.Config
 	err = yaml.Unmarshal(bytes, &c)
 	if err != nil {

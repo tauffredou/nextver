@@ -68,10 +68,6 @@ func main() {
 	parse := kingpin.Parse()
 
 	mustSetLoglevel(*logLevel)
-	log.WithFields(log.Fields{
-		"pattern": *pattern,
-	}).Debug(parse)
-
 	var f formatter.Formatter
 
 	pf := provider.ProviderFactory{
