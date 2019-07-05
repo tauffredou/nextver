@@ -1,8 +1,8 @@
 [![CircleCI](https://circleci.com/gh/tauffredou/nextver.svg?style=svg)](https://circleci.com/gh/tauffredou/nextver)
 
 Nextver embrace best practices from both commit log and versioning. 
-* leverages commit messages compliant with the ["conventional commits" specification](https://www.conventionalcommits.org/)
-* calculates next version based on the git history
+* [Conventional commit messages](https://www.conventionalcommits.org/)
+* calculates the next release version based on the git history
 
 # Quick start
 prerequisite: go
