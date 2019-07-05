@@ -1,6 +1,6 @@
 # Commit messages
 
-Nextver embrace the *Conventional commit* specification : [https://www.conventionalcommits.org/](https://www.conventionalcommits.org/)
+Nextver follows the *Conventional commit* specification : [https://www.conventionalcommits.org/](https://www.conventionalcommits.org/)
 
 Examples:
 
@@ -19,3 +19,5 @@ title: add towel to bag (#123)
 body: A large towel can be used to lie on the sand AND to dry after swimming
 
 ```
+
+it would also be considered as a *MINOR* change.
