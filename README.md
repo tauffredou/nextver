@@ -23,4 +23,5 @@ nextver -r path/to/git/repo get changelog
 - Providers
   - [github](doc/providers/github.md)
   - [git](doc/providers/git.md)
+- [commit messages](doc/commits.md) 
 - [versioning](doc/versioning.md) 
