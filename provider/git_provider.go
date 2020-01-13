@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/model"
 	"gopkg.in/src-d/go-git.v4"
@@ -161,6 +162,7 @@ func (p *GitProvider) tagFilter(reference *plumbing.Reference) bool {
 
 func (p *GitProvider) tagMapper(reference *plumbing.Reference) model.Release {
 	return model.Release{
+		Ref:            reference.Hash().String(),
 		CurrentVersion: reference.Name().Short(),
 		VersionPattern: p.VersionPattern(),
 	}
