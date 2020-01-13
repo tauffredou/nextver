@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/suite"
 	"github.com/tauffredou/nextver/model"
+	"gopkg.in/src-d/go-billy.v4/osfs"
+	"gopkg.in/src-d/go-git.v4/plumbing/cache"
+	"gopkg.in/src-d/go-git.v4/storage/filesystem"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -82,6 +86,19 @@ func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
 		})
 	}
 }
+
+func TestGitProvider_getPreviousRelease_noPreviousRelease(t *testing.T) {
+
+	outputDir, _ := ioutil.TempDir("", "nextver-test-")
+	defer os.RemoveAll(outputDir)
+
+	fs := osfs.New(outputDir)
+	_, _ = git.Init(filesystem.NewStorage(fs, cache.NewObjectLRUDefault()), fs)
+
+	p := NewGitProvider(outputDir, "vSEMVER")
+	assert.Nil(t, p.getPreviousRelease("any"))
+}
+
 func (suite *ProviderSuite) TestGitProvider_GetReleases_badPath() {
 	p := NewGitProvider("badPath", "vSEMVER")
 	_, err := p.GetReleases()

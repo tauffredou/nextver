@@ -69,7 +69,13 @@ func (p *GitProvider) GetReleases() ([]model.Release, error) {
 }
 
 func (p *GitProvider) GetNextRelease() *model.Release {
-	tag := p.getPreviousRelease("").CurrentVersion
+	previousRelease := p.getPreviousRelease("")
+	var tag string
+	if previousRelease == nil {
+		tag = ""
+	} else {
+		tag = previousRelease.CurrentVersion
+	}
 	release, _ := p.GetRelease(tag)
 	return release
 }
@@ -161,13 +167,21 @@ func (p *GitProvider) tagMapper(reference *plumbing.Reference) model.Release {
 }
 
 func (p *GitProvider) getPreviousRelease(release string) *model.Release {
-	releases, _ := p.GetReleases()
+	releases, err := p.GetReleases()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(releases) == 0 {
+		return nil
+	}
+
 	for i := 0; i < len(releases)-1; i++ {
-		it := &releases[i]
+		it := releases[i]
 		it.VersionPattern = p.VersionPattern()
 
 		if release == "" {
-			return it
+			return &it
 		}
 
 		if it.CurrentVersion == release {
