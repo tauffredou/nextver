@@ -7,8 +7,8 @@ import (
 )
 
 type ProviderFactory struct {
-	Token   string
-	Pattern string
+	TokenReader func() string
+	Pattern     string
 }
 
 func (f *ProviderFactory) CreateProvider(repo string) (Provider, error) {
@@ -18,7 +18,7 @@ func (f *ProviderFactory) CreateProvider(repo string) (Provider, error) {
 	}
 	switch v := r.(type) {
 	case GithubRepository:
-		provider, err := NewGithubProvider(v.Owner, v.Repo, f.Token, &GithubProviderConfig{Pattern: f.Pattern})
+		provider, err := NewGithubProvider(v.Owner, v.Repo, f.TokenReader(), &GithubProviderConfig{Pattern: f.Pattern})
 		if err != nil {
 			return nil, err
 		}

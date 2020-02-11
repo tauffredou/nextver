@@ -72,8 +72,8 @@ func main() {
 	var f formatter.Formatter
 
 	pf := provider.ProviderFactory{
-		Pattern: *pattern,
-		Token:   githubToken(),
+		Pattern:     *pattern,
+		TokenReader: githubToken,
 	}
 
 	prov, err := pf.CreateProvider(*repo)

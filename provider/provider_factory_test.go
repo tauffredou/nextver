@@ -7,8 +7,8 @@ import (
 
 func TestCreateProvider_github(t *testing.T) {
 	f := ProviderFactory{
-		Token:   "aToken",
-		Pattern: "vSEMVER",
+		TokenReader: func() string { return "aToken" },
+		Pattern:     "vSEMVER",
 	}
 
 	p, err := f.CreateProvider("github.com/test/test-rep")
