@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/model"
 	"gopkg.in/src-d/go-git.v4"
@@ -103,12 +102,16 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 	}
 
 	previousRelease := p.getPreviousRelease(name)
+
 	var prevObject *object.Tag
 	if previousRelease != nil {
+		if name == "" {
+			release = *previousRelease
+		}
 		prev, _ := repo.Tag(previousRelease.CurrentVersion)
 		prevObject, err = repo.TagObject(prev.Hash())
 		if err != nil {
-			return nil, err
+			log.WithError(err).Warnf("Incomplete tag %s", prev.Name())
 		}
 	}
 
@@ -168,20 +171,24 @@ func (p *GitProvider) tagMapper(reference *plumbing.Reference) model.Release {
 	}
 }
 
+// getPreviousRelease calculates the release before
+// if release parameter is empty, then it returns the last release
 func (p *GitProvider) getPreviousRelease(release string) *model.Release {
 	releases, err := p.GetReleases()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if len(releases) == 0 {
+	l := len(releases)
+	if l == 0 {
 		return nil
 	}
-
-	for i := 0; i < len(releases)-1; i++ {
+	if l == 1 {
+		return &releases[0]
+	}
+	for i := 0; i < l-1; i++ {
 		it := releases[i]
 		it.VersionPattern = p.VersionPattern()
-
 		if release == "" {
 			return &it
 		}

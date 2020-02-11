@@ -82,7 +82,12 @@ func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, p.getPreviousRelease(tt.name))
+			previousRelease := p.getPreviousRelease(tt.name)
+			if tt.want == nil {
+				assert.Nil(t, previousRelease)
+			} else {
+				assert.Equal(t, tt.want.CurrentVersion, previousRelease.CurrentVersion)
+			}
 		})
 	}
 }
