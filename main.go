@@ -107,7 +107,10 @@ func main() {
 }
 
 func getNextVersion(prov provider.Provider) formatter.Formatter {
-	r := prov.GetNextRelease()
+	r, err := prov.GetRelease("")
+	if err != nil {
+		log.Fatal(err)
+	}
 	v, _ := r.NextVersion()
 	return &formatter.SimpleFormatter{Key: "next-version", Value: v}
 }

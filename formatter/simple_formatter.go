@@ -8,7 +8,7 @@ type SimpleFormatter struct {
 }
 
 func (f *SimpleFormatter) Json() {
-	fmt.Printf("{ \"%s\" : \"%s\"}\n", f.Key, f.Value)
+	fmt.Printf("{\"%s\":\"%s\"}\n", f.Key, f.Value)
 }
 
 func (f *SimpleFormatter) Yaml() {

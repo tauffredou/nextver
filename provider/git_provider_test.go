@@ -111,8 +111,8 @@ func (suite *ProviderSuite) TestGitProvider_GetReleases_badPath() {
 }
 
 func (suite *ProviderSuite) TestGitProvider_GetNextRelease() {
-	actual := suite.provider.GetNextRelease()
-
+	actual, err := suite.provider.GetRelease("")
+	require.NoError(suite.T(), err)
 	require.NotNil(suite.T(), actual)
 	assert.Equal(suite.T(), "v1.2.0", actual.MustNextVersion())
 }

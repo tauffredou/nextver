@@ -68,18 +68,6 @@ func (p *GitProvider) GetReleases() ([]model.Release, error) {
 	return r, nil
 }
 
-func (p *GitProvider) GetNextRelease() *model.Release {
-	previousRelease := p.getPreviousRelease("")
-	var tag string
-	if previousRelease == nil {
-		tag = ""
-	} else {
-		tag = previousRelease.CurrentVersion
-	}
-	release, _ := p.GetRelease(tag)
-	return release
-}
-
 func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 	var (
 		err error
