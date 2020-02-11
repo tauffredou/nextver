@@ -68,6 +68,7 @@ func main() {
 	parse := kingpin.Parse()
 
 	mustSetLoglevel(*logLevel)
+	log.SetOutput(os.Stderr)
 	var f formatter.Formatter
 
 	pf := provider.ProviderFactory{
