@@ -9,5 +9,3 @@ RUN go test ./... && \
 FROM alpine:3.8
 RUN apk add -U --no-cache ca-certificates
 COPY --from=builder /src/nextver/nextver /usr/local/bin/nextver
-
-ENTRYPOINT [ "/usr/local/bin/nextver" ]
