@@ -1,6 +1,11 @@
 package formatter
 
-import "time"
+import (
+	"strings"
+	"time"
+)
+
+type ChangeLevel string
 
 type ReleaseItemDTO struct {
 	Kind   string    `json:"kind,omitempty"`
@@ -19,4 +24,19 @@ type ReleaseDTO struct {
 	NextVersion    string           `json:"next_version"`
 	Changelog      []ReleaseItemDTO `json:"changelog"`
 	VersionPattern string           `json:"version_pattern"`
+}
+
+func (r *ReleaseDTO) HasChanges(level string) bool {
+	return len(r.ChangesByLevel(level)) > 0
+}
+
+func (r *ReleaseDTO) ChangesByLevel(level string) []ReleaseItemDTO {
+	level = strings.ToUpper(level)
+	res := []ReleaseItemDTO{}
+	for i := range r.Changelog {
+		if r.Changelog[i].Level == level {
+			res = append(res, r.Changelog[i])
+		}
+	}
+	return res
 }

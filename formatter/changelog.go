@@ -4,23 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/yaml.v2"
+	"io"
 	"os"
+	"text/template"
 )
 
 type ChangelogFormatter struct {
 	release  *ReleaseDTO
 	colorize bool
+	output   io.Writer
 }
 
 func NewChangelogFormatter(release *ReleaseDTO, colorize bool) *ChangelogFormatter {
 	return &ChangelogFormatter{
 		release:  release,
 		colorize: colorize,
+		output:   os.Stdout,
 	}
 }
 
 func (c *ChangelogFormatter) Json() {
-	encoder := json.NewEncoder(os.Stdout)
+	encoder := json.NewEncoder(c.output)
 	encoder.SetIndent("", "  ")
 	_ = encoder.Encode(c.release)
 }
@@ -81,4 +85,13 @@ func (c *ChangelogFormatter) Console() {
 			r.Changelog[i].Title)
 	}
 
+}
+
+func (c *ChangelogFormatter) Template(text string) error {
+	tpl, err := template.New("Release").Parse(text)
+	if err != nil {
+		return err
+	}
+
+	return tpl.Execute(c.output, c.release)
 }

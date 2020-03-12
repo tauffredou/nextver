@@ -10,6 +10,7 @@ type Formatter interface {
 	Json()
 	Yaml()
 	Console()
+	Template(text string) error
 }
 
 func MapReleases(items []model.Release) []ReleaseDTO {

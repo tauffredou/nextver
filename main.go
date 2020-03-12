@@ -5,6 +5,7 @@ import (
 	"github.com/tauffredou/nextver/formatter"
 	"github.com/tauffredou/nextver/provider"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"io/ioutil"
 	"os"
 	"path"
 )
@@ -14,11 +15,12 @@ var (
 
 	repo     = kingpin.Flag("repo", "Repository").Default(".").Short('r').String()
 	pattern  = kingpin.Flag("pattern", "Versionning pattern. Read from .nextver/config.yml by default").Short('p').String()
-	output   = kingpin.Flag("output", "Output format (console, json, yaml)").Short('o').Default("console").String()
+	output   = kingpin.Flag("output", "Output format (console, json, yaml, template)").Short('o').Default("console").String()
 	branch   = kingpin.Flag("branch", "Target branch (default branch if empty)").Short('b').String()
 	logLevel = kingpin.Flag("log-level", "Log level").Default("info").String()
 
-	color = kingpin.Flag("color", "Colorize output").Default("true").Bool()
+	color        = kingpin.Flag("color", "Colorize output").Default("true").Bool()
+	templateFile = kingpin.Flag("template", "Template file").String()
 
 	//get
 	getCommand       = kingpin.Command("get", "")
@@ -28,10 +30,9 @@ var (
 	_                = getCommand.Command("next-version", "Get next version")
 
 	//create
-	createCommand = kingpin.Command("create", "")
+	//createCommand = kingpin.Command("create", "")
 
-	_ = createCommand.Command("release", "Create release")
-	_ = createCommand.Flag("template", "Template file").String()
+	//_ = createCommand.Command("release", "Create release")
 
 	defaultHubConfig = path.Join(MustString(os.UserHomeDir()), ".config", "hub")
 )
@@ -101,6 +102,18 @@ func main() {
 			f.Json()
 		case "yaml":
 			f.Yaml()
+		case "template":
+			if *templateFile == "" {
+				log.Fatal("template parameter is required")
+			}
+			text, err := ioutil.ReadFile(*templateFile)
+			if err != nil {
+				log.Error(err)
+			}
+			err = f.Template(string(text))
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	}
 

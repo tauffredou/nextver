@@ -17,14 +17,20 @@ type ReleaseItem struct {
 	Date   time.Time
 }
 
+const (
+	ChangeLevelPatch = "PATCH"
+	ChangeLevelMinor = "MINOR"
+	ChangeLevelMajor = "MAJOR"
+)
+
 func (ri *ReleaseItem) LevelName() string {
 	switch ri.Level {
 	case MAJOR:
-		return "MAJOR"
+		return ChangeLevelMajor
 	case MINOR:
-		return "MINOR"
+		return ChangeLevelMinor
 	case PATCH:
-		return "PATCH"
+		return ChangeLevelPatch
 	}
 	return ""
 }
