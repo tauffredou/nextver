@@ -3,10 +3,18 @@ module github.com/tauffredou/nextver
 go 1.12
 
 require (
+	github.com/Masterminds/goutils v1.1.0 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.2.0 // indirect
+	github.com/google/uuid v1.1.1 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
+	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20190119021625-d9689b595017
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/sirupsen/logrus v1.4.0

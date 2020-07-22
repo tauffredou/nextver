@@ -10,9 +10,9 @@ import (
 
 var (
 	changeLog = []model.ReleaseItem{
-		model.NewReleaseItem("tauf", testDate, "feat(feature-1234): commit message"),
-		model.NewReleaseItem("tauf", testDate, "fix(feature-1234): commit message"),
-		model.NewReleaseItem("tauf", testDate, "empty"),
+		model.NewReleaseItem("abc", "tauf", testDate, "feat(feature-1234): commit message"),
+		model.NewReleaseItem("bcd", "tauf", testDate, "fix(feature-1234): commit message"),
+		model.NewReleaseItem("cde", "tauf", testDate, "empty"),
 	}
 )
 

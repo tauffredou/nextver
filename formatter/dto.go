@@ -8,6 +8,7 @@ import (
 type ChangeLevel string
 
 type ReleaseItemDTO struct {
+	ID     string    `json:"id,omitempty"`
 	Kind   string    `json:"kind,omitempty"`
 	Scope  string    `json:"scope,omitempty"`
 	Title  string    `json:"title"`

@@ -19,7 +19,7 @@ func TestRelease_NextVersion_semver(t *testing.T) {
 		VersionPattern: "SEMVER",
 		CurrentVersion: "1.0",
 		Changelog: []ReleaseItem{
-			NewReleaseItem("Picsou", time.Now(), "feat: gain more money"),
+			NewReleaseItem("abc", "Picsou", time.Now(), "feat: gain more money"),
 		},
 	}
 

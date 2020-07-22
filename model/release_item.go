@@ -35,9 +35,10 @@ func (ri *ReleaseItem) LevelName() string {
 	return ""
 }
 
-func NewReleaseItem(author string, date time.Time, message string) ReleaseItem {
+func NewReleaseItem(id string, author string, date time.Time, message string) ReleaseItem {
 
 	ri := ReleaseItem{
+		ID:     id,
 		Author: author,
 		Date:   date,
 	}

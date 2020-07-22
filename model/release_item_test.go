@@ -21,9 +21,10 @@ func MustParse(layout, value string) time.Time {
 }
 
 func TestNewReleaseItem_withScope(t *testing.T) {
-	ri := NewReleaseItem("tauf", testDate, "feat(scope): pouet")
+	ri := NewReleaseItem("abc", "tauf", testDate, "feat(scope): pouet")
 
 	expected := ReleaseItem{
+		ID:     "abc",
 		Kind:   "feat",
 		Scope:  "scope",
 		Detail: "",
@@ -37,9 +38,10 @@ func TestNewReleaseItem_withScope(t *testing.T) {
 }
 
 func TestNewReleaseItem_withSpecialChars(t *testing.T) {
-	ri := NewReleaseItem("tauf", testDate, "some-kind(scope): pouet")
+	ri := NewReleaseItem("abc", "tauf", testDate, "some-kind(scope): pouet")
 
 	expected := ReleaseItem{
+		ID:     "abc",
 		Kind:   "some-kind",
 		Scope:  "scope",
 		Detail: "",
@@ -53,9 +55,10 @@ func TestNewReleaseItem_withSpecialChars(t *testing.T) {
 }
 
 func TestNewReleaseItem_withSimpleCommit(t *testing.T) {
-	ri := NewReleaseItem("tauf", testDate, "some simple commit")
+	ri := NewReleaseItem("abc", "tauf", testDate, "some simple commit")
 
 	expected := ReleaseItem{
+		ID:     "abc",
 		Kind:   "",
 		Scope:  "",
 		Detail: "",
@@ -69,9 +72,10 @@ func TestNewReleaseItem_withSimpleCommit(t *testing.T) {
 }
 
 func TestNewReleaseItem_withoutScope(t *testing.T) {
-	ri := NewReleaseItem("tauf", testDate, "feat: pouet")
+	ri := NewReleaseItem("abc", "tauf", testDate, "feat: pouet")
 
 	expected := ReleaseItem{
+		ID:     "abc",
 		Kind:   "feat",
 		Scope:  "",
 		Detail: "",
@@ -89,9 +93,10 @@ func TestNewReleaseItem_withText(t *testing.T) {
 
 This do that
 `
-	ri := NewReleaseItem("tauf", testDate, message)
+	ri := NewReleaseItem("abc", "tauf", testDate, message)
 
 	expected := ReleaseItem{
+		ID:     "abc",
 		Kind:   "feat",
 		Title:  "commit message",
 		Detail: "This do that",

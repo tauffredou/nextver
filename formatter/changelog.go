@@ -3,6 +3,8 @@ package formatter
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/sprig"
+	"github.com/willf/pad"
 	"gopkg.in/yaml.v2"
 	"io"
 	"os"
@@ -88,10 +90,19 @@ func (c *ChangelogFormatter) Console() {
 }
 
 func (c *ChangelogFormatter) Template(text string) error {
-	tpl, err := template.New("Release").Parse(text)
+	tpl, err := template.New("Release").
+		Funcs(sprig.TxtFuncMap()).
+		Funcs(FuncMap()).
+		Parse(text)
 	if err != nil {
 		return err
 	}
 
 	return tpl.Execute(c.output, c.release)
+}
+
+func FuncMap() template.FuncMap {
+	return template.FuncMap{
+		"padRight": pad.Right,
+	}
 }

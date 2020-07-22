@@ -38,6 +38,7 @@ func mapReleaseItem(items []model.ReleaseItem) []ReleaseItemDTO {
 	for i := range items {
 		item := items[i]
 		res[i] = ReleaseItemDTO{
+			ID:     item.ID,
 			Kind:   item.Kind,
 			Level:  item.LevelName(),
 			Title:  item.Title,

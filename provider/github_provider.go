@@ -199,7 +199,7 @@ func (p *GithubProvider) getHistory(fromRef string, toRef string) []model.Releas
 		if c.Oid == toRef {
 			break
 		}
-		ri := model.NewReleaseItem(c.Author.Name, c.Author.Date, c.Message)
+		ri := model.NewReleaseItem(c.Oid, c.Author.Name, c.Author.Date, c.Message)
 		result = append(result, ri)
 	}
 

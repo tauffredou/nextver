@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/tauffredou/nextver/model"
@@ -90,7 +91,6 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 	}
 
 	previousRelease := p.getPreviousRelease(name)
-
 	var prevObject *object.Tag
 	if previousRelease != nil {
 		if name == "" {
@@ -101,6 +101,10 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 		if err != nil {
 			log.WithError(err).Warnf("Incomplete tag %s", prev.Name())
 		}
+	} else {
+		if name != "" {
+			return nil, errors.New("unknown release")
+		}
 	}
 
 	var options git.LogOptions
@@ -109,9 +113,9 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		options = git.LogOptions{
-			From: refObject.Target,
+			From:  refObject.Target,
+			Order: git.LogOrderCommitterTime,
 		}
 	} else {
 		options = git.LogOptions{
@@ -140,10 +144,18 @@ func mapChangelog(it object.CommitIter, prevObject *object.Tag) []model.ReleaseI
 		if prevObject != nil && commit.Hash == prevObject.Target {
 			break
 		}
-		item := model.NewReleaseItem(commit.Author.Name, commit.Author.When, commit.Message)
-		changelog = append(changelog, item)
+
+		/* filter merge commit */
+		if len(commit.ParentHashes) == 1 {
+			item := mapToReleaseItem(commit)
+			changelog = append(changelog, item)
+		}
 	}
 	return changelog
+}
+
+func mapToReleaseItem(commit *object.Commit) model.ReleaseItem {
+	return model.NewReleaseItem(commit.Hash.String(), commit.Author.Name, commit.Author.When, commit.Message)
 }
 
 func (p *GitProvider) tagFilter(reference *plumbing.Reference) bool {
