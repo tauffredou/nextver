@@ -124,7 +124,7 @@ func (suite *ProviderSuite) TestGitProvider_GetRelease_empty() {
 	require.NotNil(suite.T(), actual)
 }
 
-func (suite *ProviderSuite) TestGitProvider_GetRelease_last() {
+func (suite *ProviderSuite) TestGitProvider_GetRelease_oldest() {
 	p := suite.provider
 	actual, err := p.GetRelease("v1.0.1")
 	require.NoError(suite.T(), err)

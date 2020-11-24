@@ -1,19 +1,18 @@
 package provider
 
 import (
-	"errors"
-	"fmt"
-	log "github.com/sirupsen/logrus"
-	"github.com/tauffredou/nextver/model"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"regexp"
-	"sort"
+  "fmt"
+  log "github.com/sirupsen/logrus"
+  "github.com/tauffredou/nextver/model"
+  "gopkg.in/src-d/go-git.v4"
+  "gopkg.in/src-d/go-git.v4/plumbing"
+  "gopkg.in/src-d/go-git.v4/plumbing/object"
+  "gopkg.in/yaml.v2"
+  "io/ioutil"
+  "os"
+  "path/filepath"
+  "regexp"
+  "sort"
 )
 
 type GitProvider struct {
@@ -102,9 +101,9 @@ func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 			log.WithError(err).Warnf("Incomplete tag %s", prev.Name())
 		}
 	} else {
-		if name != "" {
-			return nil, errors.New("unknown release")
-		}
+		//if name != "" {
+		//	return nil, errors.New("unknown release")
+		//}
 	}
 
 	var options git.LogOptions
@@ -146,7 +145,7 @@ func mapChangelog(it object.CommitIter, prevObject *object.Tag) []model.ReleaseI
 		}
 
 		/* filter merge commit */
-		if len(commit.ParentHashes) == 1 {
+		if len(commit.ParentHashes) < 2 {
 			item := mapToReleaseItem(commit)
 			changelog = append(changelog, item)
 		}
