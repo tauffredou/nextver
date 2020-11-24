@@ -28,6 +28,20 @@ func TestRelease_NextVersion_semver(t *testing.T) {
 	assert.Equal(t, "1.1.0", actual)
 }
 
+func TestRelease_NextVersion_2digits(t *testing.T) {
+	r := &Release{
+		VersionPattern: "SEMVER",
+		CurrentVersion: "1.10.0",
+		Changelog: []ReleaseItem{
+			NewReleaseItem("abc", "Picsou", time.Now(), "feat: gain more money"),
+		},
+	}
+
+	actual, err := r.NextVersion()
+	assert.NoError(t, err)
+	assert.Equal(t, "1.11.0", actual)
+}
+
 func TestRelease_NextVersion_unknown(t *testing.T) {
 	r := &Release{VersionPattern: "bad"}
 
