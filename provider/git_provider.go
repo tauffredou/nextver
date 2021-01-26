@@ -1,18 +1,19 @@
 package provider
 
 import (
-  "fmt"
-  log "github.com/sirupsen/logrus"
-  "github.com/tauffredou/nextver/model"
-  "gopkg.in/src-d/go-git.v4"
-  "gopkg.in/src-d/go-git.v4/plumbing"
-  "gopkg.in/src-d/go-git.v4/plumbing/object"
-  "gopkg.in/yaml.v2"
-  "io/ioutil"
-  "os"
-  "path/filepath"
-  "regexp"
-  "sort"
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"github.com/tauffredou/nextver/model"
+	"github.com/tauffredou/nextver/sorter"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
 )
 
 type GitProvider struct {
@@ -40,6 +41,7 @@ func (p *GitProvider) VersionRegexp() *regexp.Regexp {
 	return p.versionRegexp
 }
 
+// GetReleases get sorted release list
 func (p *GitProvider) GetReleases() ([]model.Release, error) {
 	repo, err := git.PlainOpen(p.path)
 	if err != nil {
@@ -62,12 +64,12 @@ func (p *GitProvider) GetReleases() ([]model.Release, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort.SliceStable(r, func(i, j int) bool {
-		return r[i].CurrentVersion > r[j].CurrentVersion
-	})
+
+	sort.Sort(sorter.BySemver(r))
 	return r, nil
 }
 
+// GetRelease get info for the release
 func (p *GitProvider) GetRelease(name string) (*model.Release, error) {
 	var (
 		err error

@@ -85,7 +85,7 @@ func TestRelease_NextVersion_withEmptyChangelog(t *testing.T) {
 
 	r := model.Release{
 		Changelog:      changeLog,
-		CurrentVersion: "v1.0.0 ",
+		CurrentVersion: "v1.0.0",
 		VersionPattern: "vSEMVER",
 	}
 

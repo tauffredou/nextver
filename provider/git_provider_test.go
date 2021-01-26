@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/src-d/go-git.v4"
@@ -63,9 +62,9 @@ func (suite *ProviderSuite) TestGitProvider_GetReleases() {
 	p := suite.provider
 	actual, err := p.GetReleases()
 	require.NoError(suite.T(), err)
-	require.Equal(suite.T(), 2, len(actual))
-	assert.Equal(suite.T(), "v1.1.0", actual[0].CurrentVersion)
-	assert.Equal(suite.T(), "v1.0.1", actual[1].CurrentVersion)
+	require.Equal(suite.T(), 4, len(actual))
+	assert.Equal(suite.T(), "v1.10.0", actual[0].CurrentVersion)
+	assert.Equal(suite.T(), "v1.8.0", actual[1].CurrentVersion)
 }
 
 func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
@@ -78,7 +77,7 @@ func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
 		{"v1.1.0", &model.Release{CurrentVersion: "v1.0.1", VersionPattern: "vSEMVER"}},
 		{"v1.0.1", nil},
 		{"bad", nil},
-		{"", &model.Release{CurrentVersion: "v1.1.0", VersionPattern: "vSEMVER"}},
+		{"", &model.Release{CurrentVersion: "v1.10.0", VersionPattern: "vSEMVER"}},
 	}
 	for _, tt := range tests {
 		suite.T().Run(tt.name, func(t *testing.T) {
@@ -86,6 +85,7 @@ func (suite *ProviderSuite) TestGitProvider_getPreviousRelease() {
 			if tt.want == nil {
 				assert.Nil(t, previousRelease)
 			} else {
+				assert.NotNil(t, previousRelease)
 				assert.Equal(t, tt.want.CurrentVersion, previousRelease.CurrentVersion)
 			}
 		})
@@ -114,7 +114,7 @@ func (suite *ProviderSuite) TestGitProvider_GetNextRelease() {
 	actual, err := suite.provider.GetRelease("")
 	require.NoError(suite.T(), err)
 	require.NotNil(suite.T(), actual)
-	assert.Equal(suite.T(), "v1.2.0", actual.MustNextVersion())
+	assert.Equal(suite.T(), "v1.11.0", actual.MustNextVersion())
 }
 
 func (suite *ProviderSuite) TestGitProvider_GetRelease_empty() {
@@ -148,15 +148,6 @@ func (suite *ProviderSuite) TestProvider_GetRelease_withBoundaries() {
 	assert.Equal(suite.T(), "feature 2", r.Changelog[1].Title)
 }
 
-func (suite *ProviderSuite) TestProvider_GetReleases() {
-	p := suite.provider
-
-	actual, err := p.GetReleases()
-	require.NoError(suite.T(), err)
-	assert.Equal(suite.T(), 2, len(actual))
-	assert.Equal(suite.T(), "v1.1.0", actual[0].CurrentVersion)
-	assert.Equal(suite.T(), "v1.0.1", actual[1].CurrentVersion)
-}
 
 /* other test */
 
