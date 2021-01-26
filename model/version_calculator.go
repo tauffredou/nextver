@@ -53,7 +53,7 @@ func DateVersionCalculator(r *Release) (string, error) {
 }
 
 func ReadSemver(v string) ([]int64, error) {
-	re := regexp.MustCompile(SemverRegex)
+	re := regexp.MustCompile("^" + SemverRegex + "$")
 	if re.MatchString(v) {
 		data := re.FindStringSubmatch(v)
 		major, _ := strconv.ParseInt(data[1], 10, 0)
