@@ -2,8 +2,9 @@ package model
 
 import (
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 const (
 	SemverRegex              = `v?(\d+)(\.(\d+))?(\.(\d+))?`
 	DateRegexp               = `\d{4}-\d{2}-\d{2}-\d{6}`
-	ConventionalCommitRegexp = `^([a-zA-Z-_]+)(\(([^\):]+)\))?: ?(.*)$`
+	ConventionalCommitRegexp = `^([a-zA-Z-_]+)(\(([^\):]+)\))?[ ]?: ?(.*)$`
 	FirstVersion             = "0.0.0"
 )
 

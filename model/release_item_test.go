@@ -20,6 +20,23 @@ func MustParse(layout, value string) time.Time {
 	return t
 }
 
+func TestNewReleaseItem_withSpace(t *testing.T) {
+	ri := NewReleaseItem("abc", "tauf", testDate, "feat(scope) : pouet")
+
+	expected := ReleaseItem{
+		ID:     "abc",
+		Kind:   "feat",
+		Scope:  "scope",
+		Detail: "",
+		Title:  "pouet",
+		Level:  MINOR,
+		Author: "tauf",
+		Date:   testDate,
+	}
+
+	assert.Equal(t, ri, expected)
+}
+
 func TestNewReleaseItem_withScope(t *testing.T) {
 	ri := NewReleaseItem("abc", "tauf", testDate, "feat(scope): pouet")
 
