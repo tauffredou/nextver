@@ -2,21 +2,22 @@ package provider
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/suite"
-	"github.com/tauffredou/nextver/model"
-	"gopkg.in/src-d/go-billy.v4/osfs"
-	"gopkg.in/src-d/go-git.v4/plumbing/cache"
-	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"github.com/tauffredou/nextver/model"
+	"gopkg.in/src-d/go-billy.v4/osfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/cache"
+	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
 type ProviderSuite struct {
@@ -147,7 +148,6 @@ func (suite *ProviderSuite) TestProvider_GetRelease_withBoundaries() {
 	assert.Equal(suite.T(), "feature 3", r.Changelog[0].Title)
 	assert.Equal(suite.T(), "feature 2", r.Changelog[1].Title)
 }
-
 
 /* other test */
 
