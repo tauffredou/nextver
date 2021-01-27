@@ -17,6 +17,7 @@ func (a BySemver) Less(i, j int) bool {
 	}
 
 	return semverI[0] > semverJ[0] ||
-		semverI[1] > semverJ[1] ||
-		semverI[2] > semverJ[2]
+		(semverI[0] == semverJ[0] && semverI[1] > semverJ[1]) ||
+		(semverI[0] == semverJ[0] && semverI[1] == semverJ[1] && semverI[2] > semverJ[2])
+
 }

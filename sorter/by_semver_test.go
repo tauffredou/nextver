@@ -1,27 +1,31 @@
 package sorter_test
 
 import (
+	"sort"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/tauffredou/nextver/model"
 	"github.com/tauffredou/nextver/sorter"
-	"sort"
-	"testing"
 )
 
 func TestSortBySemver(t *testing.T) {
 
 	releases := []model.Release{
-		model.Release{CurrentVersion: "v1.4.0"},
-		model.Release{CurrentVersion: "v1.2.0"},
-		model.Release{CurrentVersion: "v1.11.0"},
-		model.Release{CurrentVersion: "v1.7.0"},
+		{CurrentVersion: "v0.1.0"},
+		{CurrentVersion: "v0.10.0"},
+		{CurrentVersion: "v0.3.0"},
+		{CurrentVersion: "v0.5.0"},
+		{CurrentVersion: "v0.5.1"},
+		{CurrentVersion: "v0.6.0"},
 	}
-
 	expected := []model.Release{
-		model.Release{CurrentVersion: "v1.11.0"},
-		model.Release{CurrentVersion: "v1.7.0"},
-		model.Release{CurrentVersion: "v1.4.0"},
-		model.Release{CurrentVersion: "v1.2.0"},
+		{CurrentVersion: "v0.10.0"},
+		{CurrentVersion: "v0.6.0"},
+		{CurrentVersion: "v0.5.1"},
+		{CurrentVersion: "v0.5.0"},
+		{CurrentVersion: "v0.3.0"},
+		{CurrentVersion: "v0.1.0"},
 	}
 
 	sort.Sort(sorter.BySemver(releases))
@@ -33,17 +37,17 @@ func TestSortBySemver(t *testing.T) {
 func TestSortByDate(t *testing.T) {
 
 	releases := []model.Release{
-		model.Release{CurrentVersion: "2006-01-02-150405"},
-		model.Release{CurrentVersion: "2008-01-02-150405"},
-		model.Release{CurrentVersion: "2002-01-02-150405"},
-		model.Release{CurrentVersion: "2001-01-02-150405"},
+		{CurrentVersion: "2006-01-02-150405"},
+		{CurrentVersion: "2008-01-02-150405"},
+		{CurrentVersion: "2002-01-02-150405"},
+		{CurrentVersion: "2001-01-02-150405"},
 	}
 
 	expected := []model.Release{
-		model.Release{CurrentVersion: "2008-01-02-150405"},
-		model.Release{CurrentVersion: "2006-01-02-150405"},
-		model.Release{CurrentVersion: "2002-01-02-150405"},
-		model.Release{CurrentVersion: "2001-01-02-150405"},
+		{CurrentVersion: "2008-01-02-150405"},
+		{CurrentVersion: "2006-01-02-150405"},
+		{CurrentVersion: "2002-01-02-150405"},
+		{CurrentVersion: "2001-01-02-150405"},
 	}
 
 	sort.Sort(sorter.BySemver(releases))
